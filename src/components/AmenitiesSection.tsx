@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const AmenitiesSection = () => {
@@ -74,8 +73,8 @@ const AmenitiesSection = () => {
           
           <div className="relative animate-fade-in">
             <img 
-              src="https://images.unsplash.com/photo-1582562124811-c09040d0a901?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1035&q=80" 
-              alt="Villa Amenities" 
+              src="/pool.png" 
+              alt="Private infinity pool with flamingo float at Skypearls Villa" 
               className="w-full h-full object-cover rounded-lg shadow-lg"
             />
             <div className="absolute -bottom-8 -left-8 bg-white p-8 rounded shadow-lg max-w-[200px]">
