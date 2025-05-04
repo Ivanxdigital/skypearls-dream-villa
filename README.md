@@ -71,3 +71,21 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## BrandLogo Component
+
+### Purpose
+Encapsulates the Skypearls logo stamp and brand text with luxury entry animation for use in the Navbar and other locations. Ensures consistent, elegant branding and animation across the site.
+
+### API
+- **Props**: Inherits all `div` HTML attributes via `React.HTMLAttributes<HTMLDivElement>`
+- **className**: Optional. Additional classes for the root flex container (e.g., to control text color).
+
+### Usage Example
+```tsx
+import BrandLogo from '@/components/BrandLogo';
+
+<BrandLogo className="text-skypearl-dark" />
+```
+- The component animates the logo (fade-in) and text (slide-in) on initial render.
+- Responsive and visually aligned for luxury branding.

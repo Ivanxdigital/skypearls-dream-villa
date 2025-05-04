@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import BrandLogo from './BrandLogo';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -28,11 +29,8 @@ const Navbar = () => {
       )}
     >
       <div className="container mx-auto flex justify-between items-center px-4">
-        <a href="#" className={cn(
-          "text-2xl font-playfair font-bold transition-colors",
-          scrolled ? "text-skypearl-dark" : "text-nav-text-light"
-        )}>
-          SkyPearls<span className="text-skypearl">.</span>
+        <a href="#" className="flex items-center">
+          <BrandLogo className={scrolled ? 'text-skypearl-dark' : 'text-nav-text-light'} />
         </a>
         
         <div className="hidden md:flex space-x-8 items-center">

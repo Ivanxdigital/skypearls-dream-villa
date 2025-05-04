@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 
 const GallerySection = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -29,6 +29,11 @@ const GallerySection = () => {
     }
   ];
 
+  // Scroll reveal for section intro, carousel, and thumbnails
+  const introReveal = useScrollReveal<HTMLDivElement>({ delay: 0 });
+  const carouselReveal = useScrollReveal<HTMLDivElement>({ delay: 120 });
+  const thumbsReveal = useScrollReveal<HTMLDivElement>({ delay: 240 });
+
   const nextSlide = () => {
     setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
   };
@@ -40,7 +45,7 @@ const GallerySection = () => {
   return (
     <section id="gallery" className="section-padding bg-skypearl-dark/5">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-2xl mx-auto mb-16 animate-fade-in">
+        <div ref={introReveal.ref} className="text-center max-w-2xl mx-auto mb-16 opacity-0">
           <span className="text-sm font-medium text-skypearl uppercase tracking-wider">Gallery</span>
           <h2 className="section-title">Experience The Beauty</h2>
           <p className="section-subtitle">
@@ -48,7 +53,7 @@ const GallerySection = () => {
           </p>
         </div>
         
-        <div className="relative h-[500px] md:h-[600px] w-full rounded-lg overflow-hidden shadow-xl animate-fade-in">
+        <div ref={carouselReveal.ref} className="relative h-[500px] md:h-[600px] w-full rounded-lg overflow-hidden shadow-xl opacity-0">
           {images.map((image, index) => (
             <div 
               key={index}
@@ -71,7 +76,7 @@ const GallerySection = () => {
           
           <button 
             onClick={prevSlide}
-            className="absolute top-1/2 left-4 -translate-y-1/2 bg-white/20 hover:bg-white/40 transition-colors p-2 rounded-full text-white backdrop-blur-sm"
+            className="absolute top-1/2 left-4 -translate-y-1/2 bg-white/20 hover:bg-white/40 transition-colors p-2 rounded-full text-white backdrop-blur-sm hover:scale-105 active:scale-95 duration-300"
             aria-label="Previous image"
           >
             <ArrowLeft className="w-6 h-6" />
@@ -79,7 +84,7 @@ const GallerySection = () => {
           
           <button 
             onClick={nextSlide}
-            className="absolute top-1/2 right-4 -translate-y-1/2 bg-white/20 hover:bg-white/40 transition-colors p-2 rounded-full text-white backdrop-blur-sm"
+            className="absolute top-1/2 right-4 -translate-y-1/2 bg-white/20 hover:bg-white/40 transition-colors p-2 rounded-full text-white backdrop-blur-sm hover:scale-105 active:scale-95 duration-300"
             aria-label="Next image"
           >
             <ArrowRight className="w-6 h-6" />
@@ -91,7 +96,7 @@ const GallerySection = () => {
                 key={index}
                 onClick={() => setCurrentIndex(index)}
                 className={cn(
-                  "w-3 h-3 rounded-full transition-colors",
+                  "w-3 h-3 rounded-full transition-colors hover:scale-110 active:scale-95 duration-200",
                   index === currentIndex ? "bg-white" : "bg-white/40"
                 )}
                 aria-label={`Go to slide ${index + 1}`}
@@ -100,13 +105,13 @@ const GallerySection = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+        <div ref={thumbsReveal.ref} className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4 opacity-0">
           {images.map((image, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
               className={cn(
-                "h-24 overflow-hidden rounded-md transition-opacity",
+                "h-24 overflow-hidden rounded-md transition-opacity hover:scale-105 active:scale-95 duration-300",
                 index === currentIndex ? "ring-2 ring-skypearl" : "opacity-70 hover:opacity-100"
               )}
             >

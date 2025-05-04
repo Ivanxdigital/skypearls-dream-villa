@@ -42,10 +42,38 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
+    const buttonRef = React.useRef<HTMLButtonElement>(null)
+
+    // Ripple effect handler
+    const handleRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
+      const button = buttonRef.current
+      if (!button) return
+      const circle = document.createElement("span")
+      const diameter = Math.max(button.clientWidth, button.clientHeight)
+      circle.style.width = circle.style.height = `${diameter}px`
+      circle.className = "absolute pointer-events-none rounded-full bg-skypearl opacity-30 animate-ripple"
+      circle.style.left = `${e.clientX - button.getBoundingClientRect().left - diameter / 2}px`
+      circle.style.top = `${e.clientY - button.getBoundingClientRect().top - diameter / 2}px`
+      circle.setAttribute("data-testid", "ripple")
+      button.appendChild(circle)
+      circle.addEventListener("animationend", () => circle.remove())
+    }
+
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
+        ref={(node) => {
+          if (!asChild) buttonRef.current = node as HTMLButtonElement
+          if (typeof ref === "function") ref(node)
+          else if (ref) (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node as HTMLButtonElement
+        }}
+        className={cn(
+          buttonVariants({ variant, size, className }),
+          "relative overflow-hidden transition-all duration-300 ease-in-out"
+        )}
+        onClick={(e: any) => {
+          if (!asChild) handleRipple(e)
+          if (props.onClick) props.onClick(e)
+        }}
         {...props}
       />
     )

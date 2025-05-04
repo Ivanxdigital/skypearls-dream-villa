@@ -1,4 +1,3 @@
-
 # Skypearls Villas - Project Brief
 
 ## Project Overview
@@ -132,3 +131,30 @@ This luxury real estate website aims to showcase the premium quality and unique 
 4. **Investment Potential**: ROI and appreciation opportunities
 
 The visual design and content structure work together to create an aspirational, premium, and trustworthy online presence that reflects the sophisticated tropical lifestyle the villas offer.
+
+## Animation & Microinteraction Foundation (2025)
+
+To elevate the luxury user experience, the following animation and microinteraction enhancements were implemented site-wide:
+
+### Key Features
+- **Consistent, elegant transitions** for all interactive elements (buttons, cards, nav, etc.)
+- **Scroll-triggered reveal animations** using a custom React hook (`useScrollReveal`)
+- **Luxury ripple effect** on all buttons
+- **Subtle hover/active microinteractions** for cards and CTAs
+- **Performance and accessibility**: respects `prefers-reduced-motion`, throttled observers, and graceful degradation
+
+### Main Files Changed/Added
+- `tailwind.config.ts`: Added custom keyframes and animation utilities (`fade-in-up`, `wiggle`, `pulse`, `ripple`)
+- `src/hooks/use-scroll-reveal.tsx`: Custom hook for scroll-based reveal animations
+- `src/components/ui/button.tsx`: Enhanced with ripple effect and smooth transitions
+- `src/components/ui/card.tsx`: Enhanced with smooth hover transitions and lift effect
+
+### Usage Example
+- Use `useScrollReveal` in any component to animate on scroll:
+  ```tsx
+  import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+  // ...
+  const { ref } = useScrollReveal({ delay: 100 });
+  return <div ref={ref}>Animated content</div>;
+  ```
+- All `<Button />` and `<Card />` components now have luxury microinteractions by default.

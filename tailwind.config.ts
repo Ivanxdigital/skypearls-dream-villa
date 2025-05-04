@@ -96,6 +96,31 @@ export default {
 				'shimmer': {
 					'0%': { transform: 'translateX(-100%)' },
 					'100%': { transform: 'translateX(250%)' }
+				},
+				'fade-in-up': {
+					'0%': { opacity: '0', transform: 'translateY(20px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'wiggle': {
+					'0%, 100%': { transform: 'rotate(-3deg)' },
+					'50%': { transform: 'rotate(3deg)' }
+				},
+				'pulse': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '.6' }
+				},
+				'ripple': {
+					'0%': { transform: 'scale(0)', opacity: '0.7' },
+					'80%': { transform: 'scale(2.5)', opacity: '0.3' },
+					'100%': { transform: 'scale(3)', opacity: '0' }
+				},
+				'skypearl-logo-fade-in': {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' }
+				},
+				'skypearl-text-slide-in': {
+					'0%': { opacity: '0', transform: 'translateX(-24px)' },
+					'100%': { opacity: '1', transform: 'translateX(0)' }
 				}
 			},
 			animation: {
@@ -103,7 +128,13 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.5s ease-out',
 				'zoom-in': 'zoom-in 0.75s ease-out',
-				'shimmer': 'shimmer 1.5s ease-in-out infinite'
+				'shimmer': 'shimmer 1.5s ease-in-out infinite',
+				'fade-in-up': 'fade-in-up 0.7s cubic-bezier(0.23, 1, 0.32, 1) both',
+				'wiggle': 'wiggle 0.5s ease-in-out',
+				'pulse': 'pulse 1.2s infinite',
+				'ripple': 'ripple 0.6s linear',
+				'skypearl-logo-fade-in': 'skypearl-logo-fade-in 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards',
+				'skypearl-text-slide-in': 'skypearl-text-slide-in 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards'
 			},
 			fontFamily: {
 				'playfair': ['"Playfair Display"', 'serif'],

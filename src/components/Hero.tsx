@@ -1,6 +1,7 @@
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 
 const Hero = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -20,6 +21,12 @@ const Hero = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  // Staggered scroll reveal refs
+  const headingReveal = useScrollReveal<HTMLHeadingElement>({ delay: 0 });
+  const subtextReveal = useScrollReveal<HTMLParagraphElement>({ delay: 120 });
+  const button1Reveal = useScrollReveal<HTMLAnchorElement>({ delay: 240 });
+  const button2Reveal = useScrollReveal<HTMLAnchorElement>({ delay: 360 });
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
@@ -42,28 +49,35 @@ const Hero = () => {
       <div className="absolute top-0 inset-x-0 h-24 bg-nav-scrim z-10 pointer-events-none" />
       
       {/* Warm sand overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#E5DDD0]/70 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#E5DDD0]/30 to-transparent" />
       
       {/* Content container */}
       <div className="relative z-10 flex h-full items-center container mx-auto px-6">
-        <div className="max-w-xl animate-fade-in">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-playfair font-bold text-white mb-4 drop-shadow-lg">
+        <div className="max-w-xl">
+          <h1
+            ref={headingReveal.ref}
+            className="text-4xl md:text-5xl lg:text-6xl font-playfair font-bold text-white mb-4 drop-shadow-lg opacity-0"
+          >
             Luxury Smart Villas
             <br />
             <span className="text-skypearl">in Paradise</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-white/90 mb-8 font-light drop-shadow-sm">
+          <p
+            ref={subtextReveal.ref}
+            className="text-lg md:text-xl text-white/90 mb-8 font-light drop-shadow-sm opacity-0"
+          >
             Experience modern luxury living in Siargao's most exclusive 
             smart villa development. Where tropical beauty meets cutting-edge technology.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4">
             <a 
+              ref={button1Reveal.ref}
               href="#contact" 
               className={cn(
-                "button-primary bg-skypearl flex items-center justify-center gap-2 relative overflow-hidden",
-                "hover:bg-skypearl hover:bg-opacity-90 group"
+                "button-primary bg-skypearl flex items-center justify-center gap-2 relative overflow-hidden opacity-0",
+                "hover:bg-skypearl hover:bg-opacity-90 group hover:scale-105 active:scale-95 transition-all duration-300 ease-in-out"
               )}
             >
               <span className="relative z-10">Schedule a Private Viewing</span>
@@ -72,8 +86,9 @@ const Hero = () => {
               <div className="absolute inset-0 w-3 -left-10 bg-gradient-to-r from-transparent via-[#D4B883] to-transparent group-hover:animate-shimmer" />
             </a>
             <a 
+              ref={button2Reveal.ref}
               href="#gallery"
-              className="px-6 py-3 border border-white/30 text-white hover:bg-white/10 transition-all text-center"
+              className="px-6 py-3 border border-white/30 text-white hover:bg-white/10 transition-all text-center opacity-0 hover:scale-105 active:scale-95 duration-300 ease-in-out"
             >
               View Gallery
             </a>

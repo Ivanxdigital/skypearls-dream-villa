@@ -1,11 +1,20 @@
 import React from 'react';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 
 const AboutSection = () => {
+  // Scroll reveal for main text and image
+  const mainTextReveal = useScrollReveal<HTMLDivElement>({ delay: 0 });
+  const imageReveal = useScrollReveal<HTMLDivElement>({ delay: 200 });
+  // Staggered feature boxes
+  const feature1Reveal = useScrollReveal<HTMLDivElement>({ delay: 100 });
+  const feature2Reveal = useScrollReveal<HTMLDivElement>({ delay: 200 });
+  const feature3Reveal = useScrollReveal<HTMLDivElement>({ delay: 300 });
+
   return (
     <section id="about" className="section-padding bg-skypearl-white">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-16 items-center">
-          <div className="animate-fade-in">
+          <div ref={mainTextReveal.ref} className="opacity-0">
             <span className="text-sm font-medium text-skypearl uppercase tracking-wider">About</span>
             <h2 className="section-title">Welcome to Skypearls Villas</h2>
             <p className="text-lg text-skypearl-dark/80 mb-6">
@@ -18,21 +27,30 @@ const AboutSection = () => {
               the perfect investment for those seeking a tranquil escape or lucrative rental opportunity.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-              <div className="text-center p-6 bg-white shadow-sm">
+              <div
+                ref={feature1Reveal.ref}
+                className="text-center p-6 bg-white shadow-sm opacity-0 transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1"
+              >
                 <h3 className="font-playfair text-xl mb-2">Smart Living</h3>
                 <p className="text-skypearl-dark/70">Cutting-edge technology integrated throughout</p>
               </div>
-              <div className="text-center p-6 bg-white shadow-sm">
+              <div
+                ref={feature2Reveal.ref}
+                className="text-center p-6 bg-white shadow-sm opacity-0 transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1"
+              >
                 <h3 className="font-playfair text-xl mb-2">Prime Location</h3>
                 <p className="text-skypearl-dark/70">Minutes from airport and famous surf spots</p>
               </div>
-              <div className="text-center p-6 bg-white shadow-sm">
+              <div
+                ref={feature3Reveal.ref}
+                className="text-center p-6 bg-white shadow-sm opacity-0 transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1"
+              >
                 <h3 className="font-playfair text-xl mb-2">Sustainable</h3>
                 <p className="text-skypearl-dark/70">Solar-powered with eco-friendly design elements</p>
               </div>
             </div>
           </div>
-          <div className="relative h-full min-h-[400px] animate-fade-in">
+          <div ref={imageReveal.ref} className="relative h-full min-h-[400px] opacity-0">
             <img 
               src="/Villa Rendering.png" 
               alt="3D architectural rendering of our modern smart home villa pre-selling in Siargao" 

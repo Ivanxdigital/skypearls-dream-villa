@@ -1,13 +1,23 @@
 import React from 'react';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 
 const AmenitiesSection = () => {
+  // Scroll reveal for section intro and image
+  const introReveal = useScrollReveal<HTMLDivElement>({ delay: 0 });
+  const imageReveal = useScrollReveal<HTMLDivElement>({ delay: 300 });
+  // Staggered amenities
+  const amenity1Reveal = useScrollReveal<HTMLDivElement>({ delay: 100 });
+  const amenity2Reveal = useScrollReveal<HTMLDivElement>({ delay: 200 });
+  const amenity3Reveal = useScrollReveal<HTMLDivElement>({ delay: 300 });
+  const amenity4Reveal = useScrollReveal<HTMLDivElement>({ delay: 400 });
+
   return (
     <section id="amenities" className="section-padding bg-skypearl-white relative">
       {/* Decorative element */}
       <div className="absolute right-0 top-0 w-64 h-64 bg-skypearl opacity-5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
       
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-2xl mx-auto mb-16 animate-fade-in">
+        <div ref={introReveal.ref} className="text-center max-w-2xl mx-auto mb-16 opacity-0">
           <span className="text-sm font-medium text-skypearl uppercase tracking-wider">Luxury Living</span>
           <h2 className="section-title">Premium Amenities</h2>
           <p className="section-subtitle">
@@ -16,9 +26,9 @@ const AmenitiesSection = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
-          <div className="grid grid-cols-1 gap-6 animate-fade-in">
-            <div className="flex items-start gap-4">
-              <div className="bg-skypearl p-3 rounded-full text-white">
+          <div className="grid grid-cols-1 gap-6">
+            <div ref={amenity1Reveal.ref} className="flex items-start gap-4 opacity-0">
+              <div className="bg-skypearl p-3 rounded-full text-white hover:animate-pulse transition-all duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -30,8 +40,8 @@ const AmenitiesSection = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-4">
-              <div className="bg-skypearl p-3 rounded-full text-white">
+            <div ref={amenity2Reveal.ref} className="flex items-start gap-4 opacity-0">
+              <div className="bg-skypearl p-3 rounded-full text-white hover:animate-pulse transition-all duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -43,8 +53,8 @@ const AmenitiesSection = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-4">
-              <div className="bg-skypearl p-3 rounded-full text-white">
+            <div ref={amenity3Reveal.ref} className="flex items-start gap-4 opacity-0">
+              <div className="bg-skypearl p-3 rounded-full text-white hover:animate-pulse transition-all duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -56,8 +66,8 @@ const AmenitiesSection = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-4">
-              <div className="bg-skypearl p-3 rounded-full text-white">
+            <div ref={amenity4Reveal.ref} className="flex items-start gap-4 opacity-0">
+              <div className="bg-skypearl p-3 rounded-full text-white hover:animate-pulse transition-all duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -71,7 +81,7 @@ const AmenitiesSection = () => {
             </div>
           </div>
           
-          <div className="relative animate-fade-in">
+          <div ref={imageReveal.ref} className="relative opacity-0">
             <img 
               src="/pool.png" 
               alt="Private infinity pool with flamingo float at Skypearls Villa" 

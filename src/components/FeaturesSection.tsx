@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 
 const FeaturesSection = () => {
   const features = [
@@ -59,10 +59,13 @@ const FeaturesSection = () => {
     }
   ];
 
+  // Scroll reveal for section intro
+  const introReveal = useScrollReveal<HTMLDivElement>({ delay: 0 });
+
   return (
     <section id="features" className="section-padding bg-gradient-to-b from-white to-skypearl-light/30">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-2xl mx-auto animate-fade-in">
+        <div ref={introReveal.ref} className="text-center max-w-2xl mx-auto opacity-0">
           <span className="text-sm font-medium text-skypearl uppercase tracking-wider">Smart Technology</span>
           <h2 className="section-title">Cutting-Edge Features</h2>
           <p className="section-subtitle">
@@ -72,19 +75,22 @@ const FeaturesSection = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
-          {features.map((feature, index) => (
-            <div 
-              key={index} 
-              className="bg-white p-8 rounded-lg shadow-sm hover:shadow-md transition-shadow hover:translate-y-[-5px] transition-transform duration-300 animate-fade-in"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="text-skypearl mb-4">
-                {feature.icon}
+          {features.map((feature, index) => {
+            const cardReveal = useScrollReveal<HTMLDivElement>({ delay: 100 + index * 100 });
+            return (
+              <div 
+                key={index}
+                ref={cardReveal.ref}
+                className="bg-white p-8 rounded-lg shadow-sm hover:shadow-md transition-shadow hover:translate-y-[-5px] transition-transform duration-300 opacity-0"
+              >
+                <div className="text-skypearl mb-4">
+                  {React.cloneElement(feature.icon, { className: 'h-10 w-10 hover:animate-wiggle transition-all duration-300' })}
+                </div>
+                <h3 className="text-xl font-playfair font-medium mb-3">{feature.title}</h3>
+                <p className="text-skypearl-dark/70">{feature.description}</p>
               </div>
-              <h3 className="text-xl font-playfair font-medium mb-3">{feature.title}</h3>
-              <p className="text-skypearl-dark/70">{feature.description}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
