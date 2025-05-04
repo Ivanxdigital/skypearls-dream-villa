@@ -1,5 +1,5 @@
-
 import React from 'react';
+import AirbnbProfitCalculator from './AirbnbProfitCalculator';
 
 const InvestmentSection = () => {
   return (
@@ -79,11 +79,7 @@ const InvestmentSection = () => {
           </div>
           
           <div className="order-1 md:order-2 animate-fade-in">
-            <img 
-              src="https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1675&q=80" 
-              alt="Investment Opportunity" 
-              className="w-full h-full object-cover rounded-lg shadow-lg"
-            />
+            <AirbnbProfitCalculator />
           </div>
         </div>
       </div>
