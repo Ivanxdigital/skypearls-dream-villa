@@ -36,7 +36,7 @@ export const BrandLogo: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ clas
         src="/skypearls-logo-stamp.png"
         alt="SkyPearls Logo Stamp"
         className={cn(
-          'h-10 w-auto object-contain',
+          'h-12 w-auto object-contain',
           'opacity-0 animate-skypearl-logo-fade-in'
         )}
         style={{ animationDuration: `${logoFadeInDuration}ms`, animationFillMode: 'forwards' }}
