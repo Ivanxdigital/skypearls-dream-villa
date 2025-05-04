@@ -8,24 +8,29 @@ const GallerySection = () => {
   
   const images = [
     {
-      url: "https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80",
-      title: "Exterior View",
-      description: "Front view of the villa with infinity pool"
+      url: "/villa-anna-rendering-backside.png",
+      title: "Private Poolside Retreat",
+      description: "Tranquil evening ambiance featuring a cozy lounge area, a serene pool, and soft warm lighting."
     },
     {
-      url: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1035&q=80",
-      title: "Living Space",
-      description: "Open concept living room with ocean views"
+      url: "/villa-anna-rendering-bedroom.png",
+      title: "Serene Master Bedroom",
+      description: "Earth-toned interiors with ambient lighting and lush garden views for restful nights."
     },
     {
-      url: "https://images.unsplash.com/photo-1500673922987-e212871fec22?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80",
-      title: "Surroundings",
-      description: "Lush tropical landscape surrounding the villas"
+      url: "/villa-anna-rendering-front.png",
+      title: "Modern Desert-Inspired Façade",
+      description: "Iconic front elevation blending minimal curves, natural textures, and a tropical backdrop."
     },
     {
-      url: "https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1675&q=80",
-      title: "Aerial View",
-      description: "Drone shot showcasing the villa's location"
+      url: "/villa-anna-rendering-kitchen.png",
+      title: "Open-Air Mediterranean Kitchen",
+      description: "Chic SMEG fridge, soft arches, and natural light for a perfect blend of style and function."
+    },
+    {
+      url: "/villa-anna-rendering-livingroom.png",
+      title: "Warm Contemporary Living Room",
+      description: "A cozy gathering space with built-in seating, arched windows, and golden hour lighting."
     }
   ];
 
@@ -65,7 +70,7 @@ const GallerySection = () => {
               <img 
                 src={image.url} 
                 alt={image.title} 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-black"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-8">
                 <h3 className="text-2xl font-playfair text-white mb-2">{image.title}</h3>
