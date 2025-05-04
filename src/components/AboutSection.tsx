@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const AboutSection = () => {
@@ -35,8 +34,8 @@ const AboutSection = () => {
           </div>
           <div className="relative h-full min-h-[400px] animate-fade-in">
             <img 
-              src="https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80" 
-              alt="Skypearls Villa Exterior" 
+              src="/Villa Rendering.png" 
+              alt="3D architectural rendering of our modern smart home villa pre-selling in Siargao" 
               className="w-full h-full object-cover rounded-lg shadow-lg"
             />
             <div className="absolute -bottom-6 -right-6 bg-skypearl p-6 rounded-lg shadow-lg">
