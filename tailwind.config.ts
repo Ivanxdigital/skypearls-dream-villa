@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -59,6 +58,8 @@ export default {
 					dark: '#2C2C2C',
 					white: '#F8F8F5',
 				},
+				'nav-text-light': '#FFFFFF',
+				'nav-text-dark': '#1F2023',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -91,20 +92,26 @@ export default {
 				'zoom-in': {
 					'0%': { transform: 'scale(1.05)', opacity: '0' },
 					'100%': { transform: 'scale(1)', opacity: '1' }
+				},
+				'shimmer': {
+					'0%': { transform: 'translateX(-100%)' },
+					'100%': { transform: 'translateX(250%)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.5s ease-out',
-				'zoom-in': 'zoom-in 0.75s ease-out'
+				'zoom-in': 'zoom-in 0.75s ease-out',
+				'shimmer': 'shimmer 1.5s ease-in-out infinite'
 			},
 			fontFamily: {
 				'playfair': ['"Playfair Display"', 'serif'],
 				'montserrat': ['Montserrat', 'sans-serif']
 			},
 			backgroundImage: {
-				'hero-pattern': 'linear-gradient(to right, rgba(44, 44, 44, 0.8), rgba(44, 44, 44, 0.4)), url("/hero-villa.jpg")'
+				'hero-pattern': 'linear-gradient(to right, rgba(44, 44, 44, 0.8), rgba(44, 44, 44, 0.4)), url("/hero-villa.jpg")',
+				'nav-scrim': 'linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent)'
 			}
 		}
 	},
