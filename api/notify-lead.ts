@@ -1,5 +1,5 @@
-import { config } from 'dotenv';
-config();
+// Use Vercel Edge runtime for lower latency
+export const config = { runtime: 'edge' };
 
 import { z } from 'zod';
 import { Resend } from 'resend';
@@ -21,47 +21,80 @@ const BodySchema = z.object({
   transcript: z.string().min(1),
 });
 
+// TODO: Consider moving email addresses to environment variables
 const FROM_EMAIL = 'ivanxdigital@gmail.com';
-const TO_EMAIL = process.env.LEAD_EMAIL_TO;
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return new Response('Method not allowed', { status: 405 });
   }
 
-  const parse = BodySchema.safeParse(req.body);
+  // Validate input - using req.json() for Web API
+  let body;
+  try {
+    body = await req.json();
+  } catch (error) {
+    return new Response('Invalid JSON body', { status: 400 });
+  }
+
+  const parse = BodySchema.safeParse(body);
   if (!parse.success) {
-    return res.status(400).json({ error: 'Invalid request', details: parse.error.flatten() });
+    return new Response(JSON.stringify({ error: 'Invalid request', details: parse.error.flatten() }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
   const { lead, transcript } = parse.data;
 
-  if (!process.env.RESEND_API_KEY || !TO_EMAIL) {
-    return res.status(500).json({ error: 'Missing email configuration' });
+  // Ensure environment variables are available in Edge runtime
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const toEmail = process.env.LEAD_EMAIL_TO;
+
+  if (!resendApiKey || !toEmail) {
+    console.error('Missing Resend API key or target email address');
+    return new Response(JSON.stringify({ error: 'Missing email configuration' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const resend = new Resend(resendApiKey);
     const subject = `New Lead: ${lead.name}`;
+    // Minimal HTML escaping for user-provided content
+    const escapedName = lead.name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const escapedEmail = lead.email.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const escapedPhone = lead.phone.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const escapedTranscript = transcript.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
     const html = `
       <h2>New Lead Captured</h2>
       <ul>
-        <li><strong>Name:</strong> ${lead.name}</li>
-        <li><strong>Email:</strong> ${lead.email}</li>
-        <li><strong>Phone:</strong> ${lead.phone}</li>
+        <li><strong>Name:</strong> ${escapedName}</li>
+        <li><strong>Email:</strong> ${escapedEmail}</li>
+        <li><strong>Phone:</strong> ${escapedPhone}</li>
       </ul>
       <h3>Chat Transcript</h3>
-      <pre>${transcript}</pre>
+      <pre>${escapedTranscript}</pre>
     `;
     await resend.emails.send({
       from: FROM_EMAIL,
-      to: TO_EMAIL,
+      to: toEmail,
       subject,
       html,
     });
-    return res.status(200).json({ ok: true });
+    // Use Response object for success
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('Notify lead error:', err);
-    return res.status(500).json({ error: 'Failed to send lead email' });
+    // Use Response object for internal error
+    return new Response(JSON.stringify({ error: 'Failed to send lead email' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 } 

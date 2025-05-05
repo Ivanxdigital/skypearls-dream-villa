@@ -1,5 +1,5 @@
-import { config } from 'dotenv';
-config();
+// Use Vercel Edge runtime for lower latency
+export const config = { runtime: 'edge' };
 
 import { z } from 'zod';
 // TODO: Use proper types for req/res if available in your framework
@@ -24,32 +24,58 @@ const BodySchema = z.object({
 });
 
 // --- Handler ---
-export default async function handler(req: any, res: any) {
+export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return new Response('Method not allowed', { status: 405 });
   }
 
-  // Validate input
-  const parse = BodySchema.safeParse(req.body);
+  // Validate input - using req.json() for Web API
+  let body;
+  try {
+    body = await req.json();
+  } catch (error) {
+    return new Response('Invalid JSON body', { status: 400 });
+  }
+
+  const parse = BodySchema.safeParse(body);
   if (!parse.success) {
-    return res.status(400).json({ error: 'Invalid request', details: parse.error.flatten() });
+    // Use Response object for error
+    return new Response(JSON.stringify({ error: 'Invalid request', details: parse.error.flatten() }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
   const { messages } = parse.data;
 
   try {
-    // Pinecone setup
-    const pinecone = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
-    const pineconeIndex = pinecone.Index(process.env.PINECONE_INDEX!);
-    const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY! });
+    // Pinecone setup - Ensure environment variables are available in Edge runtime
+    // Note: dotenv is typically NOT used in serverless/edge functions.
+    // Ensure these variables are set directly in Vercel Environment Variables.
+    const pineconeApiKey = process.env.PINECONE_API_KEY;
+    const pineconeIndexName = process.env.PINECONE_INDEX;
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    const openaiModel = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
+    if (!pineconeApiKey || !pineconeIndexName || !openaiApiKey) {
+      console.error('Missing environment variables for Pinecone or OpenAI');
+      return new Response(JSON.stringify({ error: 'Missing backend configuration' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const pinecone = new Pinecone({ apiKey: pineconeApiKey });
+    const pineconeIndex = pinecone.Index(pineconeIndexName);
+    const embeddings = new OpenAIEmbeddings({ openAIApiKey: openaiApiKey });
     const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
       pineconeIndex,
-      namespace: 'default',
+      namespace: 'default', // TODO: Consider making namespace dynamic if needed
     });
 
     // LangChain RAG setup
     const model = new ChatOpenAI({
-      openAIApiKey: process.env.OPENAI_API_KEY!,
-      modelName: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      openAIApiKey: openaiApiKey,
+      modelName: openaiModel,
       temperature: 0.2,
     });
     const chain = ConversationalRetrievalQAChain.fromLLM(model, vectorStore.asRetriever(4));
@@ -65,10 +91,18 @@ export default async function handler(req: any, res: any) {
       chat_history: chatHistory,
     });
 
-    return res.status(200).json({ reply: result.text });
+    // Use Response object for success
+    return new Response(JSON.stringify({ reply: result.text }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('Chat endpoint error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+    // Use Response object for internal error
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 } 
