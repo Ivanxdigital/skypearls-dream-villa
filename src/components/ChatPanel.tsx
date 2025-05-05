@@ -62,6 +62,7 @@ export function ChatPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [leadInfo, setLeadInfo] = useState<LeadInfo>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputFormRef = useRef<HTMLFormElement>(null); // Ref for the input form
   const [debugMode] = useState(process.env.NODE_ENV === 'development'); // Use NODE_ENV for debug mode
 
   // Auto-scroll to bottom when messages change
@@ -98,6 +99,14 @@ export function ChatPanel() {
       lowerMessage.includes("phone number") ||
       lowerMessage.includes("contact information")
     );
+  };
+
+  // Function to handle scrolling input into view on focus (for mobile)
+  const handleInputFocus = () => {
+    // Add a small delay to allow the virtual keyboard to potentially appear
+    setTimeout(() => {
+      inputFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 300); // Adjust delay as needed
   };
 
   // Extract lead information from user message
@@ -284,7 +293,7 @@ export function ChatPanel() {
 
       {/* Chat Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[425px] md:max-w-[550px] h-[70vh] flex flex-col p-0 bg-skypearl-white border-skypearl-light shadow-xl">
+        <DialogContent className="sm:max-w-[425px] md:max-w-[550px] max-h-[80vh] flex flex-col p-0 bg-skypearl-white border-skypearl-light shadow-xl">
           <DialogHeader className="p-4 border-b border-skypearl-light">
             <DialogTitle className="text-skypearl-dark font-playfair text-lg">Chat with Skypearls Assistant</DialogTitle>
           </DialogHeader>
@@ -323,10 +332,11 @@ export function ChatPanel() {
           </div>
           
           {/* Input Area */}
-          <form onSubmit={handleSubmit} className="p-4 border-t border-skypearl-light flex items-center space-x-2 bg-skypearl-white">
+          <form ref={inputFormRef} onSubmit={handleSubmit} className="p-4 border-t border-skypearl-light flex items-center space-x-2 bg-skypearl-white">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onFocus={handleInputFocus}
               placeholder="Type your message..."
               className="flex-1 resize-none focus:ring-skypearl focus:border-skypearl bg-white border-skypearl-light/50"
               rows={1}
