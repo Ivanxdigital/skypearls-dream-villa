@@ -175,7 +175,7 @@ const ContactSection = () => {
         </div>
       </div>
       
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-6 right-6 z-50 hidden">
         <a 
           href="https://wa.me/639993702550" 
           target="_blank" 

@@ -67,8 +67,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           else if (ref) (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node as HTMLButtonElement
         }}
         className={cn(
-          buttonVariants({ variant, size, className }),
-          "relative overflow-hidden transition-all duration-300 ease-in-out"
+          "relative overflow-hidden transition-all duration-300 ease-in-out",
+          buttonVariants({ variant, size }),
+          className
         )}
         onClick={(e: any) => {
           if (!asChild) handleRipple(e)
