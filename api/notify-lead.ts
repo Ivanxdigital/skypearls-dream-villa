@@ -1,5 +1,5 @@
 // Use Vercel Edge runtime for lower latency
-export const config = { runtime: 'edge' };
+// export const config = { runtime: 'edge' };
 
 import { z } from 'zod';
 import { Resend } from 'resend';
