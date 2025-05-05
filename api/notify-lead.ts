@@ -1,5 +1,5 @@
-// Explicitly configure the Node.js runtime for Vercel Serverless Functions
-export const config = { runtime: 'nodejs' };
+// Explicitly configure the Node.js runtime for Vercel Serverless Functions <-- REMOVING as per Vercel guidance
+// export const config = { runtime: 'nodejs' };
 // // Use Vercel Edge runtime for lower latency <-- REMOVING this
 // export const config = { runtime: 'edge' }; // <-- KEEP COMMENTED
 
