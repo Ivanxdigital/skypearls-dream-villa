@@ -1,5 +1,7 @@
-// Use Vercel Edge runtime for lower latency
-// export const config = { runtime: 'edge' };
+// Explicitly configure the Node.js runtime for Vercel Serverless Functions
+export const config = { runtime: 'nodejs' };
+// // Use Vercel Edge runtime for lower latency <-- REMOVING this
+// export const config = { runtime: 'edge' }; // <-- KEEP COMMENTED
 
 import { z } from 'zod';
 import { Resend } from 'resend';
