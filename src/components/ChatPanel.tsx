@@ -63,7 +63,7 @@ export function ChatPanel() {
   const [leadInfo, setLeadInfo] = useState<LeadInfo>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputFormRef = useRef<HTMLFormElement>(null); // Ref for the input form
-  const [debugMode] = useState(process.env.NODE_ENV === 'development'); // Use NODE_ENV for debug mode
+  const [debugMode] = useState(import.meta.env.VITE_DEBUG_MODE === 'true'); // Use Vite env for debug mode
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -234,7 +234,8 @@ export function ChatPanel() {
         return;
       }
       
-      // Actual API call (remains the same)
+      // Actual API call
+      console.log("[ChatPanel] Attempting fetch to /api/chat with body:", JSON.stringify({ messages: currentMessages }));
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -244,12 +245,22 @@ export function ChatPanel() {
           messages: currentMessages,
         }),
       });
+      console.log("[ChatPanel] Fetch call completed. Response status:", response.status);
 
       if (!response.ok) {
-        throw new Error("Failed to get response");
+        console.error("[ChatPanel] Fetch response not OK:", response.status, response.statusText);
+        let errorBody = 'No error details available';
+        try {
+          errorBody = await response.text();
+          console.error("[ChatPanel] Error response body:", errorBody);
+        } catch (bodyError) {
+          console.error("[ChatPanel] Could not parse error response body:", bodyError);
+        }
+        throw new Error(`Failed to get response. Status: ${response.status}. Body: ${errorBody}`);
       }
 
       const data = await response.json();
+      console.log("[ChatPanel] API response data received:", data);
       const botResponse = { role: "assistant" as const, content: data.reply };
       
       setMessages(prev => [...prev, botResponse]);
@@ -259,7 +270,7 @@ export function ChatPanel() {
       }
       
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("[ChatPanel] Error caught in handleSubmit:", error);
       setMessages(prev => [
         ...prev,
         { 

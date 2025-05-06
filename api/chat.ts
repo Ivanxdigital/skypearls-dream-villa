@@ -3,8 +3,9 @@
 // // Use Vercel Edge runtime for lower latency <-- REMOVING this due to Node.js dependencies
 // export const config = { runtime: 'edge' }; // <-- KEEP COMMENTED
 
+export const config = { maxDuration: 30 };
+
 import { z } from 'zod';
-// TODO: Use proper types for req/res if available in your framework
 import { ChatOpenAI } from '@langchain/openai';
 import { Pinecone } from '@pinecone-database/pinecone';
 import { PineconeStore } from '@langchain/pinecone';
@@ -26,85 +27,83 @@ const BodySchema = z.object({
 });
 
 // --- Handler ---
-export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
-  }
-
-  // Validate input - using req.json() for Web API
-  let body;
+export default async function handler(req: any, res: any) {
   try {
-    body = await req.json();
-  } catch (error) {
-    return new Response('Invalid JSON body', { status: 400 });
-  }
-
-  const parse = BodySchema.safeParse(body);
-  if (!parse.success) {
-    // Use Response object for error
-    return new Response(JSON.stringify({ error: 'Invalid request', details: parse.error.flatten() }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-  const { messages } = parse.data;
-
-  try {
-    // Pinecone setup - Ensure environment variables are available in Edge runtime
-    // Note: dotenv is typically NOT used in serverless/edge functions.
-    // Ensure these variables are set directly in Vercel Environment Variables.
-    const pineconeApiKey = process.env.PINECONE_API_KEY;
-    const pineconeIndexName = process.env.PINECONE_INDEX;
-    const openaiApiKey = process.env.OPENAI_API_KEY;
-    const openaiModel = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-
-    if (!pineconeApiKey || !pineconeIndexName || !openaiApiKey) {
-      console.error('Missing environment variables for Pinecone or OpenAI');
-      return new Response(JSON.stringify({ error: 'Missing backend configuration' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // Load dotenv only once, inside the handler, for local dev
+    if (process.env.NODE_ENV !== 'production' && !globalThis._envLoaded) {
+      const dotenv = await import('dotenv');
+      dotenv.config();
+      globalThis._envLoaded = true;
+      console.log('.env loaded for local development');
     }
 
-    const pinecone = new Pinecone({ apiKey: pineconeApiKey });
-    const pineconeIndex = pinecone.Index(pineconeIndexName);
-    const embeddings = new OpenAIEmbeddings({ openAIApiKey: openaiApiKey });
-    const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
-      pineconeIndex,
-      namespace: 'default', // TODO: Consider making namespace dynamic if needed
-    });
+    if (req.method !== 'POST') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
 
-    // LangChain RAG setup
+    let body: unknown;
+    try {
+      body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    } catch (error) {
+      res.status(400).json({ error: 'Invalid JSON body' });
+      return;
+    }
+
+    const parse = BodySchema.safeParse(body);
+    if (!parse.success) {
+      res.status(400).json({ error: 'Invalid request', details: parse.error.flatten() });
+      return;
+    }
+    const { messages } = parse.data;
+
+    // --- Pinecone + LangChain global cache ---
+    if (!globalThis._skypearlsVectorStore) {
+      const pineconeApiKey = process.env.PINECONE_API_KEY;
+      const pineconeEnv = process.env.PINECONE_ENV;
+      const pineconeIndex = process.env.PINECONE_INDEX;
+      if (!pineconeApiKey || !pineconeEnv || !pineconeIndex) {
+        res.status(500).json({ error: 'Missing Pinecone configuration' });
+        return;
+      }
+      // Pinecone client reads env vars for API key and environment
+      const pinecone = new Pinecone();
+      const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
+      globalThis._skypearlsVectorStore = await PineconeStore.fromExistingIndex(
+        embeddings,
+        { pineconeIndex: pinecone.Index(pineconeIndex) }
+      );
+    }
+    const vectorStore = globalThis._skypearlsVectorStore;
+
+    // --- LangChain QA Chain ---
+    const modelName = process.env.OPENAI_MODEL;
+    const apiKey = process.env.OPENAI_API_KEY;
+    console.log('[CHAT API] Using model:', modelName);
+    console.log('[CHAT API] Using OpenAI API key:', apiKey ? apiKey.slice(0, 8) + '...' : 'undefined');
     const model = new ChatOpenAI({
-      openAIApiKey: openaiApiKey,
-      modelName: openaiModel,
+      openAIApiKey: apiKey,
+      modelName: modelName,
       temperature: 0.2,
     });
-    const chain = ConversationalRetrievalQAChain.fromLLM(model, vectorStore.asRetriever(4));
+    const chain = ConversationalRetrievalQAChain.fromLLM(
+      model,
+      vectorStore.asRetriever({ k: 4 }),
+      {
+        returnSourceDocuments: false,
+      }
+    );
 
-    // Prepare chat history (LangChain expects [user, assistant, user, ...])
-    const chatHistory = messages
-      .filter((m) => m.role === 'user' || m.role === 'assistant')
-      .map((m) => [m.role, m.content] as [string, string]);
-    const question = messages[messages.length - 1].content;
-
-    const result = await chain.call({
-      question,
-      chat_history: chatHistory,
-    });
-
-    // Use Response object for success
-    return new Response(JSON.stringify({ reply: result.text }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    // --- Run the chain ---
+    const userMessages = messages.filter((m: ChatMessage) => m.role === 'user');
+    const question = userMessages[userMessages.length - 1]?.content || '';
+    const chatHistory = messages.slice(0, -1).map((m: ChatMessage) => [m.role, m.content]);
+    const response = await chain.call({ question, chat_history: chatHistory });
+    const reply = response.text || response.result || 'Sorry, I could not find an answer.';
+    res.status(200).json({ reply });
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error('Chat endpoint error:', err);
-    // Use Response object for internal error
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.error('[CHAT API] Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 } 
