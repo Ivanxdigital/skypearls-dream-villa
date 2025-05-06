@@ -17,10 +17,10 @@ const LocationSection = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
           {/* Keep YouTube video on the left */}
-          <div className="lg:col-span-3 h-[400px] rounded-lg overflow-hidden shadow-lg animate-fade-in flex flex-col">
-            <div className="relative w-full h-0 pb-[56.25%] bg-skypearl-dark/50">
+          <div className="lg:col-span-3 h-auto lg:h-[400px] rounded-lg overflow-hidden shadow-lg animate-fade-in">
+            <div className="relative w-full aspect-video bg-skypearl-dark/50">
               <iframe
-                className="absolute top-0 left-0 w-full h-full rounded-lg"
+                className="absolute inset-0 w-full h-full rounded-lg"
                 src="https://www.youtube.com/embed/lVsG-Xc0tSE"
                 title="Siargao, Philippines - Nathaniel Polta"
                 frameBorder="0"
@@ -28,7 +28,7 @@ const LocationSection = () => {
                 allowFullScreen
               ></iframe>
             </div>
-            <div className="mt-2 text-xs text-white/60 text-right px-2">
+            <div className="mt-1 text-xs text-white/60 text-right px-2">
               Video by <a href="https://www.youtube.com/@nathanielpolta" target="_blank" rel="noopener noreferrer" className="underline hover:text-skypearl transition-colors">Nathaniel Polta</a> on <a href="https://www.youtube.com/watch?v=lVsG-Xc0tSE" target="_blank" rel="noopener noreferrer" className="underline hover:text-skypearl transition-colors">YouTube</a>
             </div>
           </div>
