@@ -108,6 +108,11 @@ export const villas: Villa[] = [
         url: "/villa-perls-kitchen-view.jpeg",
         title: "Open-Air Kitchen & Pool Lounge",
         description: "Sleek island layout opening directly onto the infinity pool and tropical lounging deck."
+      },
+      {
+        url: "/villa-perls-backyard.png",
+        title: "Poolside Terrace & Garden Oasis",
+        description: "Sunny pool deck with loungers, umbrella, and a lush garden backdrop—perfect for sunset relaxation."
       }
     ]
   }
