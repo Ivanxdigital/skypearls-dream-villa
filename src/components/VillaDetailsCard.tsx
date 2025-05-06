@@ -24,6 +24,13 @@ const VillaDetailsCard: React.FC<VillaDetailsCardProps> = ({ villa, className })
     { icon: <CalendarClock className="h-5 w-5" />, label: 'Turnover', value: villa.turnoverDate }
   ];
 
+  const handleRequestInfo = () => {
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div 
       ref={cardReveal.ref}
@@ -69,6 +76,7 @@ const VillaDetailsCard: React.FC<VillaDetailsCardProps> = ({ villa, className })
       {/* CTA Button */}
       <div className="mt-6">
         <button 
+          onClick={handleRequestInfo}
           className="w-full bg-skypearl hover:bg-skypearl/90 text-white py-3 px-6 rounded-md font-medium transition-colors
           hover:scale-[1.02] active:scale-[0.98] duration-300"
         >
