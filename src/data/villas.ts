@@ -24,7 +24,7 @@ export const villas: Villa[] = [
     turnoverDate: "June 2025",
     lotArea: "100 sqm",
     floorArea: "135 sqm",
-    bedrooms: 3,
+    bedrooms: 2,
     baths: 2,
     features: [
       "Smart home automation system",
@@ -34,7 +34,10 @@ export const villas: Villa[] = [
       "High-ceiling living spaces",
       "Open-plan kitchen with SMEG appliances",
       "Home office/studio space",
-      "Integrated storage solutions"
+      "Integrated storage solutions",
+      "Outdoor shower area by the swimming pool",
+      "Private parking space",
+      "24/7 Security",
     ],
     images: [
       {

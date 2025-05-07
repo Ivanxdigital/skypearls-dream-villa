@@ -21,7 +21,7 @@ const ContactSection = () => {
       <div 
         className="absolute top-0 left-0 w-full h-full opacity-10"
         style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80')",
+          backgroundImage: "url('/cloud9-boardwalk.jpg')",
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
