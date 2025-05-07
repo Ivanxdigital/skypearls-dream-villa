@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Skypearls Villas RAG (Retrieval-Augmented Generation) Chatbot is a full-stack, production-grade conversational assistant for luxury real estate. It leverages OpenAI LLMs, Pinecone vector search, and a React/Tailwind UI to answer user questions, surface villa information, and capture qualified leads.
+The Skypearls Villas RAG (Retrieval-Augmented Generation) Chatbot is a full-stack, production-grade conversational assistant for luxury real estate. It leverages OpenAI LLMs, Pinecone vector search, and a React/Tailwind UI to answer user questions, surface villa information, and capture qualified leads through a pre-chat form.
 
 ---
 
@@ -10,17 +10,38 @@ The Skypearls Villas RAG (Retrieval-Augmented Generation) Chatbot is a full-stac
 
 ```mermaid
 graph TD
-  A[User] -- Chat UI --> B(ChatPanel.tsx)
-  B -- POST /api/chat --> C[api/chat.ts]
-  C -- Pinecone Query --> D[Pinecone Vector DB]
-  C -- OpenAI API --> E[OpenAI LLM]
-  C -- Response --> B
-  B -- Lead Info --> F[api/notify-lead.ts]
-  F -- Email via Resend --> G[Business Email]
-  subgraph Data
-    D
-    E
-  end
+    A[User] -- Interacts with --> APP(App.tsx)
+    APP -- Manages Chat Toggle & State --> GT(ChatGate.tsx)
+    
+    subgraph Lead Capture Flow
+        GT -- If no cached lead --> LF(LeadForm.tsx Modal)
+        LF -- Submits LeadInfo --> GT
+        GT -- Caches LeadInfo in localStorage --> LS[localStorage]
+    end
+
+    GT -- If lead data exists --> CP(ChatPanel.tsx)
+    
+    subgraph Chat Interaction Flow
+        A -- Chat UI (via ChatPanel) --> CP
+        CP -- POST /api/chat --> API_CHAT[api/chat.ts]
+        API_CHAT -- Pinecone Query --> DB[Pinecone Vector DB]
+        API_CHAT -- OpenAI API --> LLM[OpenAI LLM]
+        API_CHAT -- Response --> CP
+    end
+
+    subgraph Notification Flow
+        CP -- LeadInfo + Transcript + sendTranscript --> API_NOTIFY[api/notify-lead.ts]
+        API_NOTIFY -- Email via Resend --> BE[Business Email]
+        API_NOTIFY -- If sendTranscript=true --> VE[Visitor Email]
+    end
+
+    subgraph Data Stores & Services
+        LS
+        DB
+        LLM
+        BE
+        VE
+    end
 ```
 
 ---
@@ -31,19 +52,28 @@ graph TD
    - Markdown files in `docs/villas/` (e.g., `villa-anna.md`) contain property data.
    - `scripts/ingest.ts` splits, embeds, and upserts these documents into Pinecone using OpenAI embeddings.
 
-2. **User Interaction**
-   - The floating `<ChatPanel />` React component (injected in `src/App.tsx`) provides a persistent chat UI on all pages.
+2. **Lead Capture (Pre-Chat)**
+   - User clicks the chat toggle button in `App.tsx`.
+   - `ChatGate.tsx` checks `localStorage` for existing lead information (`skypearls_lead`).
+   - If no valid lead info is found, `LeadForm.tsx` is displayed as a modal.
+   - User submits their `firstName`, `email`, `phone`, and `sendTranscript` preference.
+   - On submission, `LeadForm.tsx` passes the data to `ChatGate.tsx`.
+   - `ChatGate.tsx` stores the `LeadInfo` in `localStorage` and then mounts `ChatPanel.tsx`, passing the `LeadInfo`.
+   - Returning visitors with valid `LeadInfo` in `localStorage` bypass the form.
+
+3. **User Interaction (Chat)**
+   - `ChatPanel.tsx` (now receiving `LeadInfo`) provides the chat UI.
+   - The initial greeting is personalized with the user's first name.
    - User messages are sent to `/api/chat` as `{ messages: ChatMessage[] }`.
 
-3. **RAG Pipeline**
-   - `/api/chat.ts` validates input (Zod), retrieves relevant villa chunks from Pinecone (from the 'default' namespace), and calls OpenAI via LangChain's `ConversationalRetrievalQAChain`.
-   - The chain is configured with `BufferMemory` for chat history, a custom question condensing prompt (`questionGeneratorChainOptions`), and a custom QA prompt (`qaChainOptions`) to guide the LLM's responses based on retrieved context.
+4. **RAG Pipeline**
+   - `/api/chat.ts` validates input (Zod), retrieves relevant villa chunks from Pinecone, and calls OpenAI.
    - The LLM response is returned to the client.
 
-4. **Lead Capture**
-   - The chat UI detects when the bot requests or receives name, email, and phone.
-   - On "✅ Lead captured", the client POSTs `{ lead, transcript }` to `/api/notify-lead`.
-   - `/api/notify-lead.ts` validates and emails the lead to the business via Resend.
+5. **Lead Notification & Transcript Emailing**
+   - After the first successful bot interaction (if `sendTranscript` is true), or at another defined trigger point (e.g., chat close), `ChatPanel.tsx` POSTs `{ lead: { firstName, email, phone }, transcript, sendTranscript }` to `/api/notify-lead.ts`.
+   - `/api/notify-lead.ts` validates the data. It always emails the lead details and transcript to the business.
+   - If `sendTranscript` is `true` and the visitor's email is provided, it also sends a copy of the transcript to the visitor via Resend.
 
 ---
 
@@ -53,8 +83,12 @@ graph TD
 - **Ingestion**: `scripts/ingest.ts` — Pinecone ingestion script
 - **Chat API**: `api/chat.ts` — RAG endpoint (OpenAI + Pinecone)
 - **Lead API**: `api/notify-lead.ts` — Lead email endpoint
-- **UI**: `src/components/ChatPanel.tsx` — Floating chat widget
-- **Integration**: `src/App.tsx` — Injects `<ChatPanel />` globally
+- **UI Components**:
+  - `src/components/LeadForm.tsx` — **NEW** Modal form for lead capture.
+  - `src/components/ChatGate.tsx` — **NEW** Wrapper to manage lead form display and persistence.
+  - `src/components/ChatPanel.tsx` — Floating chat widget, now receives lead info as props.
+- **Integration**: `src/App.tsx` — Injects `<ChatGate />` (which renders `<ChatPanel />`) globally and manages chat toggle state.
+- **Types**: `src/types.ts` — Contains shared `LeadInfo` interface.
 
 ---
 
@@ -67,9 +101,20 @@ graph TD
 - **Validation**: Zod schema, rejects invalid/missing fields
 
 ### `/api/notify-lead` (POST)
-- **Request**: `{ lead: { name: string, email: string, phone: string }, transcript: string }`
-- **Response**: `{ ok: true }` or error object
-- **Validation**: Zod schema, all fields required
+- **Request**: 
+  ```json
+  {
+    "lead": {
+      "firstName": "string",
+      "email": "string (email format)",
+      "phone": "string"
+    },
+    "transcript": "string",
+    "sendTranscript": "boolean (optional)"
+  }
+  ```
+- **Response**: `{ ok: true, message?: string }` or error object
+- **Validation**: Zod schema. `lead.firstName`, `lead.email`, `lead.phone`, and `transcript` are required. `sendTranscript` is optional.
 
 ---
 
@@ -89,7 +134,9 @@ PINECONE_INDEX=skypearls-vectors
 
 # Lead email (Resend)
 RESEND_API_KEY=re_...
-LEAD_EMAIL_TO=ivanxdigital@gmail.com
+LEAD_EMAIL_TO=business_address@example.com
+LEAD_EMAIL_FROM=noreply@yourdomain.com # Optional, defaults to ivanxdigital@gmail.com
+LEAD_REPLY_TO=sales@yourdomain.com    # Optional, defaults to ivanxdigital@gmail.com
 ```
 
 ---
@@ -97,30 +144,16 @@ LEAD_EMAIL_TO=ivanxdigital@gmail.com
 ## Implementation Notes
 
 - **Type Safety**: All endpoints and UI use TypeScript strict mode. Zod is used for runtime validation.
+- **Lead Capture Flow**: The new pre-chat lead capture flow ensures `firstName`, `email`, and `phone` are collected before the chat session begins. This data is persisted in `localStorage` to improve UX for returning visitors.
+- **UI**: `ChatGate.tsx` orchestrates the display of `LeadForm.tsx` or `ChatPanel.tsx`. `ChatPanel.tsx` receives `LeadInfo` as a prop and personalizes the greeting. Chat history is stored in `localStorage` and is now only loaded if it matches the current lead's first name.
+- **Transcript Emailing**: The `/api/notify-lead.ts` endpoint now optionally sends the chat transcript to the visitor if `sendTranscript` is true in the request payload.
 - **Chunking**: Markdown villa files are split into ~800-character chunks with 100 overlap for optimal retrieval.
 - **Retrieval**: 
     - Pinecone is queried for top-4 relevant chunks per user question.
-    - **Namespace Consistency**: It's crucial that the Pinecone namespace used during ingestion (`scripts/ingest.ts`, e.g., 'default') matches the namespace specified during retrieval in `api/chat.ts`. A mismatch will result in no documents being found.
-- **LLM & LangChain Configuration (`api/chat.ts`)**:
-    - OpenAI GPT-4o (or mini) is used via LangChain's `ChatOpenAI`.
-    - The `ConversationalRetrievalQAChain` is configured with:
-        - `BufferMemory`: To manage chat history effectively.
-        - `questionGeneratorChainOptions`: Uses a `PromptTemplate` to rephrase follow-up questions into standalone questions, considering the chat history.
-        - `qaChainOptions`: Uses a `PromptTemplate` (e.g., `QA_PROMPT`) to instruct the LLM on how to answer using the retrieved context and maintain its persona as a Skypearls Villas assistant. It's set with `type: "stuff"` to include all retrieved documents in the context.
-- **UI**: ChatPanel persists history in `localStorage` and auto-scrolls. It heuristically extracts lead info from user input.
-- **Lead Capture**: Only triggers when all fields (name, email, phone) are present and not previously sent.
-- **Testing & Debugging Retrieval**: 
-    - See `skypearls-rag-setup.md` for manual and automated test steps.
-    - If the chatbot isn't retrieving relevant information:
-        - Set `returnSourceDocuments: true` in the `ConversationalRetrievalQAChain` options in `api/chat.ts`.
-        - Log the `sourceDocuments` (count and content) in the API response to verify what, if anything, is being retrieved from Pinecone. A count of 0 often points to namespace issues or problems with the ingested data/embeddings.
-        - Ensure the `scripts/ingest.ts` has been run successfully after any content changes or if issues are suspected.
-- **Vercel Deployment**: 
-    - **ESM/CommonJS Module Scope**: If you encounter a `ReferenceError: exports is not defined in ES module scope` in Vercel function logs (especially when `"type": "module"` is in `package.json`), it typically indicates a mismatch in JavaScript module systems. 
-    - **Resolution**: 
-        - Ensure `tsconfig.node.json` (or the tsconfig Vercel uses for API routes) has `"module": "ESNext"` (or a similar ESM target like `ES2020`, `ES2022`), `"moduleResolution": "bundler"` (or `"nodenext"`/`"node16"`), and that `"noEmit": false` (or is commented out). Also, verify its `"include"` array correctly covers the `api` directory (e.g., `"api/**/*.ts"`).
-        - As a further measure, ensure the root `tsconfig.json` also specifies `"module": "ESNext"` and a compatible `"moduleResolution"` in its `compilerOptions` to guide TypeScript towards ESM output for any files it might process for the backend.
-        - Double-check all necessary environment variables (e.g., `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, `OPENAI_API_KEY`) are correctly set in the Vercel project settings.
+    - **Namespace Consistency**: Crucial for Pinecone operations.
+- **LLM & LangChain Configuration (`api/chat.ts`)**: No changes in this update.
+- **Testing & Debugging Retrieval**: No changes in this update.
+- **Vercel Deployment**: No changes in this update.
 
 ---
 
@@ -128,8 +161,8 @@ LEAD_EMAIL_TO=ivanxdigital@gmail.com
 
 - **Add More Villas**: Drop new `.md` files in `docs/villas/` and re-run `node scripts/ingest.ts`.
 - **Custom Prompts**: Adjust system prompt or chain config in `api/chat.ts` for tone/behavior.
-- **CRM Integration**: Replace or extend `/api/notify-lead.ts` to store leads in Supabase or another backend.
-- **UI Customization**: Refine `ChatPanel.tsx` for branding, animations, or advanced lead forms.
+- **CRM Integration**: Extend `/api/notify-lead.ts` to store leads in Supabase or another backend.
+- **UI Customization**: Refine `LeadForm.tsx` or `ChatPanel.tsx` for branding or advanced features.
 
 ---
 
@@ -169,12 +202,15 @@ LEAD_EMAIL_TO=ivanxdigital@gmail.com
 - **How do I update villa info?**
   - Edit or add markdown files in `docs/villas/` and re-run the ingestion script.
 - **How do I test the chatbot?**
-  - Run `npm run dev`, open the site, and interact with the chat widget. See `skypearls-rag-setup.md` for test cases.
+  - Run `npm run dev`, open the site. New users will see the lead form. Interact with the chat widget. See `skypearls-rag-setup.md` for test cases.
 - **How do I change the lead email recipient?**
   - Update `LEAD_EMAIL_TO` in your environment variables.
+- **How do I change the sender/reply-to for lead emails?**
+  - Update `LEAD_EMAIL_FROM` and `LEAD_REPLY_TO` in your environment variables.
 
 ---
 
 ## References
 - See `skypearls-rag-setup.md` for setup and task breakdown.
 - See `project-brief.md` for overall project context. 
+- See `docs/pre-chat-lead-prd.md` for the Product Requirements Document for this feature. 

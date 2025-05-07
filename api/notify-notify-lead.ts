@@ -1,18 +1,5 @@
-// Explicitly configure the Node.js runtime for Vercel Serverless Functions <-- REMOVING as per Vercel guidance
-// export const config = { runtime: 'nodejs' };
-// // Use Vercel Edge runtime for lower latency <-- REMOVING this
-// export const config = { runtime: 'edge' }; // <-- KEEP COMMENTED
-export const config = { runtime: 'edge' };
 import { z } from 'zod';
 import { Resend } from 'resend';
-
-// --- Types ---
-// Remove local Lead interface, rely on Zod schema inference if needed elsewhere
-// interface Lead {
-//   firstName: string; // Changed from name
-//   email: string;
-//   phone: string;
-// }
 
 // Updated schema as per requirements
 const LeadDataSchema = z.object({
@@ -29,14 +16,10 @@ export const BodySchema = z.object({
 
 // Use environment variables for email configuration, with sensible fallbacks for local dev if needed.
 // TODO: Ensure these environment variables are set in Vercel.
-// const FROM_EMAIL_CONTACT = process.env.LEAD_FROM_EMAIL || 'concierge@skypearls.com'; // For emails sent to visitor
-// const FROM_EMAIL_INTERNAL = process.env.INTERNAL_FROM_EMAIL || 'noreply@skypearls.com'; // For emails sent to business
-// const BUSINESS_EMAIL_TO = process.env.LEAD_EMAIL_TO || 'ivanxdigital@gmail.com';
-// const REPLY_TO_EMAIL = process.env.LEAD_REPLY_TO || 'concierge@skypearls.com';
-
-const FROM_EMAIL = "ivanxdigital@gmail.com";
-const REPLY_TO_EMAIL = "ivanxdigital@gmail.com";
-const BUSINESS_EMAIL_TO = process.env.LEAD_EMAIL_TO || 'ivanxdigital@gmail.com'; // Keep business destination configurable
+const FROM_EMAIL_CONTACT = process.env.LEAD_FROM_EMAIL || 'concierge@skypearls.com'; // For emails sent to visitor
+const FROM_EMAIL_INTERNAL = process.env.INTERNAL_FROM_EMAIL || 'noreply@skypearls.com'; // For emails sent to business
+const BUSINESS_EMAIL_TO = process.env.LEAD_EMAIL_TO || 'ivanxdigital@gmail.com';
+const REPLY_TO_EMAIL = process.env.LEAD_REPLY_TO || 'concierge@skypearls.com';
 
 // Basic HTML escaping function
 function escapeHtml(unsafe: string | undefined): string {
@@ -117,9 +100,9 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     await resend.emails.send({
-      from: FROM_EMAIL,
+      from: FROM_EMAIL_INTERNAL, // Internal notifications can come from a noreply-type address
       to: BUSINESS_EMAIL_TO,
-      replyTo: REPLY_TO_EMAIL,
+      reply_to: REPLY_TO_EMAIL, // Use reply_to (snake_case) for Resend API
       subject: businessEmailSubject,
       html: businessEmailHtml,
     });
@@ -146,9 +129,9 @@ export default async function handler(req: Request): Promise<Response> {
 
     try {
       await resend.emails.send({
-        from: FROM_EMAIL,
+        from: FROM_EMAIL_CONTACT, // Use a more user-friendly from address for visitor
         to: lead.email, 
-        replyTo: REPLY_TO_EMAIL,
+        reply_to: REPLY_TO_EMAIL, // Use reply_to (snake_case) for Resend API
         subject: visitorEmailSubject,
         html: visitorEmailHtml,
       });
@@ -156,12 +139,12 @@ export default async function handler(req: Request): Promise<Response> {
     } catch (err) {
       console.error('[API/NOTIFY-LEAD] Failed to send transcript email to visitor:', err);
       // Consider the overall success. If business email failed, this is also a problem.
-      // If only visitor email failed, it\'s less critical but still an issue.
+      // If only visitor email failed, it's less critical but still an issue.
     }
   }
 
   // Determine overall success. For now, if business email sending was attempted (even if visitor failed),
-  // consider it a success from the client\'s perspective of submitting the lead.
+  // consider it a success from the client's perspective of submitting the lead.
   // More granular error reporting could be added if needed.
   return new Response(JSON.stringify({ success: true, message: 'Lead processed.' }), {
     status: 200,
