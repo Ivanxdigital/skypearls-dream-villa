@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
 
-const AirbnbProfitCalculator: React.FC = () => {
+const AirbnbProfitCalculator: React.FC<{
+  defaultNightlyRate?: number;
+  defaultMinRate?: number;
+  defaultMaxRate?: number;
+}> = ({
+  defaultNightlyRate = 20000,
+  defaultMinRate = 18000,
+  defaultMaxRate = 22000
+}) => {
   // State for inputs
-  const [nightlyRate, setNightlyRate] = useState<number>(8500);
+  const [nightlyRate, setNightlyRate] = useState<number>(defaultNightlyRate);
   const [isDynamicPricing, setIsDynamicPricing] = useState<boolean>(false);
-  const [minNightlyRate, setMinNightlyRate] = useState<number>(7500);
-  const [maxNightlyRate, setMaxNightlyRate] = useState<number>(9500);
+  const [minNightlyRate, setMinNightlyRate] = useState<number>(defaultMinRate);
+  const [maxNightlyRate, setMaxNightlyRate] = useState<number>(defaultMaxRate);
   const [cleaningFee, setCleaningFee] = useState<number>(1500);
   const [utilities, setUtilities] = useState<number>(3000);
   const [daysBooked, setDaysBooked] = useState<number>(24);
