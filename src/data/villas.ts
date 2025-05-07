@@ -70,11 +70,11 @@ export const villas: Villa[] = [
   {
     id: "villa-perles",
     name: "Villa Perles",
-    priceRange: "₱20 M–₱25 M",
+    priceRange: "₱28 M–₱30 M",
     turnoverDate: "TBD",
     lotArea: "100 sqm",
     floorArea: "135 sqm",
-    bedrooms: 1-2,
+    bedrooms: 2,
     baths: 2,
     features: [
       "Iconic double-curved architectural façade",
@@ -84,7 +84,8 @@ export const villas: Villa[] = [
       "Freestanding bathtub with immersive jungle views",
       "Dedicated carport & scooter/surfboard alcove",
       "Second-level lounge terrace with private seating",
-      "Smart home automation & solar-ready energy system"
+      "Smart home automation & solar-ready energy system",
+      "Private Swimming Pool"
     ],
     images: [
       {
