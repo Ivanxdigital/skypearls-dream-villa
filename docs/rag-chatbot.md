@@ -115,6 +115,12 @@ LEAD_EMAIL_TO=ivanxdigital@gmail.com
         - Set `returnSourceDocuments: true` in the `ConversationalRetrievalQAChain` options in `api/chat.ts`.
         - Log the `sourceDocuments` (count and content) in the API response to verify what, if anything, is being retrieved from Pinecone. A count of 0 often points to namespace issues or problems with the ingested data/embeddings.
         - Ensure the `scripts/ingest.ts` has been run successfully after any content changes or if issues are suspected.
+- **Vercel Deployment**: 
+    - **ESM/CommonJS Module Scope**: If you encounter a `ReferenceError: exports is not defined in ES module scope` in Vercel function logs (especially when `"type": "module"` is in `package.json`), it typically indicates a mismatch in JavaScript module systems. 
+    - **Resolution**: 
+        - Ensure `tsconfig.node.json` (or the tsconfig Vercel uses for API routes) has `"module": "ESNext"` (or a similar ESM target like `ES2020`, `ES2022`), `"moduleResolution": "bundler"` (or `"nodenext"`/`"node16"`), and that `"noEmit": false` (or is commented out). Also, verify its `"include"` array correctly covers the `api` directory (e.g., `"api/**/*.ts"`).
+        - As a further measure, ensure the root `tsconfig.json` also specifies `"module": "ESNext"` and a compatible `"moduleResolution"` in its `compilerOptions` to guide TypeScript towards ESM output for any files it might process for the backend.
+        - Double-check all necessary environment variables (e.g., `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, `OPENAI_API_KEY`) are correctly set in the Vercel project settings.
 
 ---
 
