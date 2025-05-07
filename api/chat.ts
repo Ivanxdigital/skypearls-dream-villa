@@ -14,6 +14,13 @@ import { OpenAIEmbeddings } from '@langchain/openai';
 import { PromptTemplate } from "@langchain/core/prompts";
 import { BufferMemory } from "langchain/memory";
 
+// Define an interface for our custom global properties
+// Simply define the shape we expect on globalThis directly
+interface CustomGlobalThis {
+  _envLoaded?: boolean;
+  _skypearlsVectorStore?: PineconeStore;
+}
+
 // --- Types ---
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -32,10 +39,10 @@ const BodySchema = z.object({
 export default async function handler(req: any, res: any) {
   try {
     // Load dotenv only once, inside the handler, for local dev
-    if (process.env.NODE_ENV !== 'production' && !globalThis._envLoaded) {
+    if (process.env.NODE_ENV !== 'production' && !(globalThis as CustomGlobalThis)._envLoaded) {
       const dotenv = await import('dotenv');
       dotenv.config();
-      globalThis._envLoaded = true;
+      (globalThis as CustomGlobalThis)._envLoaded = true;
       console.log('.env loaded for local development');
     }
 
@@ -60,7 +67,7 @@ export default async function handler(req: any, res: any) {
     const { messages } = parse.data;
 
     // --- Pinecone + LangChain global cache ---
-    if (!globalThis._skypearlsVectorStore) {
+    if (!(globalThis as CustomGlobalThis)._skypearlsVectorStore) {
       const pineconeApiKey = process.env.PINECONE_API_KEY;
       const pineconeEnv = process.env.PINECONE_ENV;
       const pineconeIndex = process.env.PINECONE_INDEX;
@@ -71,7 +78,7 @@ export default async function handler(req: any, res: any) {
       // Pinecone client reads env vars for API key and environment
       const pinecone = new Pinecone();
       const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
-      globalThis._skypearlsVectorStore = await PineconeStore.fromExistingIndex(
+      (globalThis as CustomGlobalThis)._skypearlsVectorStore = await PineconeStore.fromExistingIndex(
         embeddings,
         { 
           pineconeIndex: pinecone.Index(pineconeIndex),
@@ -79,7 +86,12 @@ export default async function handler(req: any, res: any) {
         }
       );
     }
-    const vectorStore = globalThis._skypearlsVectorStore;
+    const vectorStore = (globalThis as CustomGlobalThis)._skypearlsVectorStore;
+
+    if (!vectorStore) {
+      // This should ideally not happen if the above logic is correct and Pinecone initializes
+      throw new Error("Vector store not initialized after cache check.");
+    }
 
     // --- LangChain QA Chain ---
     const modelName = process.env.OPENAI_MODEL;

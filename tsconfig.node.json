@@ -7,7 +7,6 @@
 
     /* Bundler mode */
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
     // "noEmit": true, // Vercel needs JS output for API routes
@@ -18,5 +17,5 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "api/**/*.ts"] // Include API routes
+  "include": ["vite.config.ts", "api/**/*.ts", "src/global.d.ts"]
 }
