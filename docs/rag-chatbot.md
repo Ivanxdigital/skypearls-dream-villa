@@ -36,7 +36,8 @@ graph TD
    - User messages are sent to `/api/chat` as `{ messages: ChatMessage[] }`.
 
 3. **RAG Pipeline**
-   - `/api/chat.ts` validates input (Zod), retrieves relevant villa chunks from Pinecone, and calls OpenAI via LangChain's `ConversationalRetrievalQAChain`.
+   - `/api/chat.ts` validates input (Zod), retrieves relevant villa chunks from Pinecone (from the 'default' namespace), and calls OpenAI via LangChain's `ConversationalRetrievalQAChain`.
+   - The chain is configured with `BufferMemory` for chat history, a custom question condensing prompt (`questionGeneratorChainOptions`), and a custom QA prompt (`qaChainOptions`) to guide the LLM's responses based on retrieved context.
    - The LLM response is returned to the client.
 
 4. **Lead Capture**
@@ -97,11 +98,23 @@ LEAD_EMAIL_TO=ivanxdigital@gmail.com
 
 - **Type Safety**: All endpoints and UI use TypeScript strict mode. Zod is used for runtime validation.
 - **Chunking**: Markdown villa files are split into ~800-character chunks with 100 overlap for optimal retrieval.
-- **Retrieval**: Pinecone is queried for top-4 relevant chunks per user question.
-- **LLM**: OpenAI GPT-4o (or mini) is used via LangChain's `ChatOpenAI`.
+- **Retrieval**: 
+    - Pinecone is queried for top-4 relevant chunks per user question.
+    - **Namespace Consistency**: It's crucial that the Pinecone namespace used during ingestion (`scripts/ingest.ts`, e.g., 'default') matches the namespace specified during retrieval in `api/chat.ts`. A mismatch will result in no documents being found.
+- **LLM & LangChain Configuration (`api/chat.ts`)**:
+    - OpenAI GPT-4o (or mini) is used via LangChain's `ChatOpenAI`.
+    - The `ConversationalRetrievalQAChain` is configured with:
+        - `BufferMemory`: To manage chat history effectively.
+        - `questionGeneratorChainOptions`: Uses a `PromptTemplate` to rephrase follow-up questions into standalone questions, considering the chat history.
+        - `qaChainOptions`: Uses a `PromptTemplate` (e.g., `QA_PROMPT`) to instruct the LLM on how to answer using the retrieved context and maintain its persona as a Skypearls Villas assistant. It's set with `type: "stuff"` to include all retrieved documents in the context.
 - **UI**: ChatPanel persists history in `localStorage` and auto-scrolls. It heuristically extracts lead info from user input.
 - **Lead Capture**: Only triggers when all fields (name, email, phone) are present and not previously sent.
-- **Testing**: See `skypearls-rag-setup.md` for manual and automated test steps.
+- **Testing & Debugging Retrieval**: 
+    - See `skypearls-rag-setup.md` for manual and automated test steps.
+    - If the chatbot isn't retrieving relevant information:
+        - Set `returnSourceDocuments: true` in the `ConversationalRetrievalQAChain` options in `api/chat.ts`.
+        - Log the `sourceDocuments` (count and content) in the API response to verify what, if anything, is being retrieved from Pinecone. A count of 0 often points to namespace issues or problems with the ingested data/embeddings.
+        - Ensure the `scripts/ingest.ts` has been run successfully after any content changes or if issues are suspected.
 
 ---
 
