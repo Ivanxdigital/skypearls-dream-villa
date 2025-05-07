@@ -51,7 +51,7 @@ type LeadInfo = {
 export function ChatPanel() {
   console.log("ChatPanel rendering"); // Debug log
   
-  const [isOpen, setIsOpen] = useState(false); // Keep it closed by default
+  const [isOpen, setIsOpen] = useState(true); // Keep it open by default
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",

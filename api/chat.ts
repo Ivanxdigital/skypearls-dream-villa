@@ -11,6 +11,8 @@ import { Pinecone } from '@pinecone-database/pinecone';
 import { PineconeStore } from '@langchain/pinecone';
 import { ConversationalRetrievalQAChain } from 'langchain/chains';
 import { OpenAIEmbeddings } from '@langchain/openai';
+import { PromptTemplate } from "@langchain/core/prompts";
+import { BufferMemory } from "langchain/memory";
 
 // --- Types ---
 export interface ChatMessage {
@@ -71,7 +73,10 @@ export default async function handler(req: any, res: any) {
       const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
       globalThis._skypearlsVectorStore = await PineconeStore.fromExistingIndex(
         embeddings,
-        { pineconeIndex: pinecone.Index(pineconeIndex) }
+        { 
+          pineconeIndex: pinecone.Index(pineconeIndex),
+          namespace: "default",
+        }
       );
     }
     const vectorStore = globalThis._skypearlsVectorStore;
@@ -81,26 +86,69 @@ export default async function handler(req: any, res: any) {
     const apiKey = process.env.OPENAI_API_KEY;
     console.log('[CHAT API] Using model:', modelName);
     console.log('[CHAT API] Using OpenAI API key:', apiKey ? apiKey.slice(0, 8) + '...' : 'undefined');
+    
     const model = new ChatOpenAI({
       openAIApiKey: apiKey,
       modelName: modelName,
       temperature: 0.2,
     });
+
+    const condenseQuestionTemplate = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+Chat History:
+{chat_history}
+Follow Up Input: {question}
+Standalone question:`;
+    const CONDENSE_QUESTION_PROMPT = PromptTemplate.fromTemplate(condenseQuestionTemplate);
+
+    const qaTemplate = `You are a helpful Skypearls Villas assistant. Your job is to answer questions about the luxury villas in Siargao, Philippines.
+Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+When customers show interest, encourage them to provide their name, email, and phone for a viewing.
+Context:
+{context}
+
+Question: {question}
+Helpful Answer:`;
+    const QA_PROMPT = PromptTemplate.fromTemplate(qaTemplate);
+    
     const chain = ConversationalRetrievalQAChain.fromLLM(
       model,
       vectorStore.asRetriever({ k: 4 }),
       {
-        returnSourceDocuments: false,
+        memory: new BufferMemory({
+          memoryKey: "chat_history", 
+          inputKey: "question",
+          outputKey: "text",
+          returnMessages: true, 
+        }),
+        questionGeneratorChainOptions: {
+          template: condenseQuestionTemplate,
+        },
+        qaChainOptions: {
+          type: "stuff",
+          prompt: QA_PROMPT,
+        },
+        returnSourceDocuments: true,
       }
     );
 
     // --- Run the chain ---
-    const userMessages = messages.filter((m: ChatMessage) => m.role === 'user');
-    const question = userMessages[userMessages.length - 1]?.content || '';
-    const chatHistory = messages.slice(0, -1).map((m: ChatMessage) => [m.role, m.content]);
-    const response = await chain.call({ question, chat_history: chatHistory });
-    const reply = response.text || response.result || 'Sorry, I could not find an answer.';
-    res.status(200).json({ reply });
+    // The user's last message is the "question"
+    const question = messages[messages.length - 1].content;
+    
+    console.log('[CHAT API] Question to chain:', question);
+    
+    const response = await chain.call({ question });
+    const reply = response.text || 'Sorry, I could not find an answer.';
+    const sourceDocuments = response.sourceDocuments || [];
+    
+    console.log('[CHAT API] Response from chain:', reply);
+    console.log('[CHAT API] Retrieved Source Documents Count:', sourceDocuments.length);
+    sourceDocuments.forEach((doc: any, index: number) => {
+      console.log(`[CHAT API] Doc ${index + 1}:`, doc.pageContent.substring(0, 100) + "...");
+      console.log(`[CHAT API] Doc ${index + 1} Metadata:`, doc.metadata);
+    });
+
+    res.status(200).json({ reply, sourceDocuments });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[CHAT API] Error:', err);

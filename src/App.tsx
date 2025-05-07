@@ -15,7 +15,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       {/* ChatPanel disabled temporarily */}
-      {/* <ChatPanel /> */}
+      <ChatPanel />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
