@@ -50,8 +50,6 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanelProps) {
-  console.log("ChatPanel rendering with leadInfo:", leadInfo); // Debug log
-  
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -125,6 +123,12 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
       localStorage.setItem(`skypearls_chat_history_${leadInfo.email}`, JSON.stringify(messages));
     }
   }, [messages, isOpen, leadInfo]);
+
+  useEffect(() => {
+    if (leadInfo) {
+      console.log("[ChatPanel] leadInfo on mount/update:", leadInfo);
+    }
+  }, [leadInfo]);
 
   const handleInputFocus = () => {
     setTimeout(() => {

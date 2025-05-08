@@ -37,6 +37,33 @@ const BodySchema = z.object({
 
 // --- Handler ---
 export default async function handler(req: any, res: any) {
+  if (process.env.NEXT_PUBLIC_AGENT_MODE === "on") {
+    // 🕵️‍♂️ chat-agent invoked via proxy
+    const url = new URL(req.url!, `http://${req.headers.host}`);
+    url.pathname = url.pathname.replace(/\/api\/chat$/, '/api/chat-agent');
+    const cleanBody =
+      typeof req.body === 'string'
+        ? req.body
+        : JSON.stringify(req.body ?? {});
+    const { 'content-length': _cl, ...proxyHeaders } = req.headers as any;
+    const agentRes = await fetch(url.toString(), {
+      method: req.method,
+      headers: proxyHeaders,
+      body: cleanBody,
+      redirect: 'manual',
+    });
+    res.status(agentRes.status);
+    agentRes.headers.forEach((value, key) => res.setHeader(key, value));
+    if (agentRes.body) {
+      const { Readable } = await import('stream');
+      const nodeStream = Readable.fromWeb(agentRes.body as any);
+      nodeStream.pipe(res);
+    } else {
+      res.end();
+    }
+    return;
+  }
+
   try {
     // Load dotenv only once, inside the handler, for local dev
     if (process.env.NODE_ENV !== 'production' && !(globalThis as CustomGlobalThis)._envLoaded) {
