@@ -75,6 +75,28 @@
   .section-padding {
     @apply py-16 md:py-24;
   }
+  
+  .dock-chat[data-state="open"] {
+    position: fixed;
+    bottom: 6rem; /* 96px = 56px FAB + 40px breathing room */
+    right: 1rem;
+    left: auto;
+    top: auto;
+    transform: none;
+  }
+}
+
+/* Mobile override for dock-chat */
+@media (max-width: 639px) {
+  .dock-chat[data-state="open"] {
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 0.5rem !important;
+    width: auto !important;
+    max-width: calc(100vw - 1rem) !important;
+    min-width: 0 !important;
+    transform: none !important;
+  }
 }
 
 /* Removed styles for #chat-panel-root */

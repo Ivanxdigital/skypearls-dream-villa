@@ -61,7 +61,9 @@ export function LeadForm({ isOpen, onOpenChange, onSubmit }: LeadFormProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-skypearl-white border-skypearl-light">
+      <DialogContent 
+        className="dock-chat w-full max-w-full sm:max-w-[425px] md:max-w-[550px] max-h-[80vh] bg-skypearl-white border-skypearl-light shadow-xl z-[9999] animate-in fade-in data-[state=open]:duration-150"
+      >
         <DialogHeader>
           <DialogTitle className="text-skypearl-dark font-playfair">Contact Information</DialogTitle>
           <DialogDescription>

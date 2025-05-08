@@ -10,6 +10,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { LeadInfo } from "@/types"; // Import shared LeadInfo
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Add custom CSS for the scrollbar
 const scrollbarStyles = `
@@ -64,7 +66,7 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
       setMessages([
         {
           role: "assistant",
-          content: `Hi ${leadInfo.firstName}! I'm your Skypearls Villas assistant. How can I help you with our luxury villas in Siargao today?`,
+          content: `Hi ${leadInfo.firstName}! I'm Skye, your virtual assistant. How can I help you with our luxury villas in Siargao today?`,
         },
       ]);
     }     
@@ -260,7 +262,13 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
 
       {/* Chat Dialog. isOpen and onOpenChange are now props */}
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px] md:max-w-[550px] max-h-[80vh] flex flex-col p-0 bg-skypearl-white border-skypearl-light shadow-xl">
+        <DialogContent 
+          className="
+            dock-chat w-full max-w-full
+            sm:max-w-[425px] md:max-w-[550px] max-h-[80vh] 
+            flex flex-col p-0 bg-skypearl-white border-skypearl-light shadow-xl z-[9999]
+            animate-in fade-in data-[state=open]:duration-150"
+        >
           <DialogHeader className="p-4 border-b border-skypearl-light flex flex-row justify-between items-center">
             <DialogTitle className="text-skypearl-dark font-playfair text-lg">Chat with Skypearls Assistant</DialogTitle>
             {/* End Chat button in header for better visibility */}
@@ -286,13 +294,19 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
               >
                 <div
                   className={cn(
-                    "max-w-[75%] rounded-lg px-4 py-2",
-                    message.role === "user"
-                      ? "bg-skypearl text-white"
-                      : "bg-skypearl-light text-skypearl-dark"
+                    'max-w-[75%] rounded-lg px-4 py-2',
+                    message.role === 'user'
+                      ? 'bg-skypearl text-white'
+                      : 'bg-skypearl-light text-skypearl-dark',
+                    'prose prose-sm' +
+                      (message.role === 'user'
+                        ? ' !prose-invert:!text-white'
+                        : '')
                   )}
                 >
-                  {message.content}
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {message.content}
+                  </ReactMarkdown>
                 </div>
               </div>
             ))}
