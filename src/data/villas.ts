@@ -20,7 +20,7 @@ export const villas: Villa[] = [
   {
     id: "villa-anna",
     name: "Villa Anna",
-    priceRange: "₱18 M–₱22 M",
+    priceRange: "₱23M",
     turnoverDate: "June 2025",
     lotArea: "100 sqm",
     floorArea: "135 sqm",
@@ -70,7 +70,7 @@ export const villas: Villa[] = [
   {
     id: "villa-perles",
     name: "Villa Perles",
-    priceRange: "₱28 M–₱30 M",
+    priceRange: "₱28M–₱35M",
     turnoverDate: "TBD",
     lotArea: "100 sqm",
     floorArea: "135 sqm",
