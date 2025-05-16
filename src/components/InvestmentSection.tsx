@@ -1,20 +1,35 @@
 import React from 'react';
 import AirbnbProfitCalculator from './AirbnbProfitCalculator';
+import { motion } from 'framer-motion';
 
 const InvestmentSection = () => {
+  const animationProps = {
+    initial: { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+  };
+
   return (
-    <section id="investment" className="section-padding bg-white">
+    <section id="investment" className="section-padding bg-white overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-2xl mx-auto mb-16 animate-fade-in">
+        <motion.div
+          className="text-center max-w-2xl mx-auto mb-16"
+          {...animationProps}
+          transition={{ duration: 0.5 }}
+        >
           <span className="text-sm font-medium text-skypearl uppercase tracking-wider">Investment</span>
           <h2 className="section-title">A Premium Opportunity</h2>
           <p className="section-subtitle">
             Skypearls Villas offers not just a luxury lifestyle, but a sound investment with exceptional returns.
           </p>
-        </div>
+        </motion.div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          <div className="order-2 md:order-1 animate-fade-in">
+          <motion.div
+            className="order-2 md:order-1"
+            {...animationProps}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
             <h3 className="text-2xl font-playfair mb-6">Pre-Selling Advantage</h3>
             <p className="text-lg text-skypearl-dark/80 mb-6">
               As a pre-selling development, Skypearls Villas offers early investors the opportunity to secure units at 
@@ -76,11 +91,15 @@ const InvestmentSection = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
           
-          <div className="order-1 md:order-2 animate-fade-in">
+          <motion.div
+            className="order-1 md:order-2"
+            {...animationProps}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
             <AirbnbProfitCalculator />
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

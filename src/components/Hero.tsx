@@ -45,8 +45,8 @@ const Hero = () => {
       {/* Global dim overlay */}
       <div className="absolute inset-0 bg-black/30" />
       
-      {/* Nav-scrim overlay for improved navbar text contrast */}
-      <div className="absolute top-0 inset-x-0 h-24 bg-nav-scrim z-10 pointer-events-none" />
+      {/* Top gradient for navbar integration - replaces nav-scrim */}
+      <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-black/50 via-black/30 to-transparent z-10 pointer-events-none" />
       
       {/* Warm sand overlay gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#E5DDD0]/30 to-transparent" />
@@ -65,7 +65,7 @@ const Hero = () => {
           
           <p
             ref={subtextReveal.ref}
-            className="text-lg md:text-xl text-white/90 mb-8 font-light drop-shadow-sm opacity-0"
+            className="text-lg md:text-xl text-white/90 mb-8 font-light drop-shadow-md opacity-0"
           >
             Experience modern luxury living in Siargao's most exclusive 
             smart villa development. Where tropical beauty meets cutting-edge technology.
@@ -77,7 +77,7 @@ const Hero = () => {
               href="#contact" 
               className={cn(
                 "button-primary bg-skypearl flex items-center justify-center gap-2 relative overflow-hidden opacity-0",
-                "hover:bg-skypearl hover:bg-opacity-90 group hover:scale-105 active:scale-95 transition-all duration-300 ease-in-out"
+                "hover:bg-skypearl/90 group hover:scale-105 active:scale-95 transition-all duration-300 ease-in-out"
               )}
             >
               <span className="relative z-10">Schedule a Private Viewing</span>
@@ -88,9 +88,11 @@ const Hero = () => {
             <a 
               ref={button2Reveal.ref}
               href="#gallery"
-              className="px-6 py-3 border border-white/30 text-white hover:bg-white/10 transition-all text-center opacity-0 hover:scale-105 active:scale-95 duration-300 ease-in-out"
+              className="px-6 py-3 border border-white/30 text-white hover:bg-white/10 transition-all text-center opacity-0 hover:scale-105 active:scale-95 duration-300 ease-in-out relative overflow-hidden group"
             >
-              View Gallery
+              <span className="relative z-10">View Gallery</span>
+              {/* Subtle shimmer on hover */}
+              <div className="absolute inset-0 w-3 -left-10 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
             </a>
           </div>
         </div>
