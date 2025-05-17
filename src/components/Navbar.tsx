@@ -106,10 +106,10 @@ const Navbar = () => {
     <>
       <nav 
         className={cn(
-          'fixed w-full z-50 transition-all duration-500',
+          'fixed w-full z-50 border-b transition-all duration-300',
           (scrolled || mobileMenuOpen)
-            ? 'bg-white/90 backdrop-blur-sm shadow-sm border-b border-skypearl/30 py-4' 
-            : 'bg-transparent py-6'
+            ? 'bg-white/90 backdrop-blur-sm shadow-sm border-skypearl/30 py-4' 
+            : 'bg-transparent border-transparent py-6'
         )}
       >
         <div className="container mx-auto flex justify-between items-center px-4">
