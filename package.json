@@ -9,10 +9,14 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "jest"
+    "test": "jest",
+    "ingest": "tsx scripts/ingest.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
+    "@langchain/core": "^0.3.55",
+    "@langchain/langgraph": "^0.2.71",
+    "@langchain/langgraph-checkpoint": "^0.0.17",
     "@langchain/openai": "^0.5.10",
     "@langchain/pinecone": "^0.2.0",
     "@pinecone-database/pinecone": "^5.1.2",
@@ -93,8 +97,11 @@
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
     "ts-jest": "^29.3.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.4",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }

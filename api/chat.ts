@@ -6,19 +6,15 @@
 export const config = { maxDuration: 30 };
 
 import { z } from 'zod';
-import { ChatOpenAI } from '@langchain/openai';
-import { Pinecone } from '@pinecone-database/pinecone';
-import { PineconeStore } from '@langchain/pinecone';
-import { ConversationalRetrievalQAChain } from 'langchain/chains';
-import { OpenAIEmbeddings } from '@langchain/openai';
-import { PromptTemplate } from "@langchain/core/prompts";
-import { BufferMemory } from "langchain/memory";
+import { createVillaGraph } from '../src/agents/villa-graph.js';
+import { createCheckpointer } from '../src/lib/langgraph/checkpointer.js';
+import { StateAnnotation, GraphState } from '../src/lib/langgraph/state.js';
 
 // Define an interface for our custom global properties
 // Simply define the shape we expect on globalThis directly
 interface CustomGlobalThis {
   _envLoaded?: boolean;
-  _skypearlsVectorStore?: PineconeStore;
+  _skypearlsVectorStore?: unknown;
 }
 
 // --- Types ---
@@ -33,10 +29,30 @@ const ChatMessageSchema = z.object({
 });
 const BodySchema = z.object({
   messages: z.array(ChatMessageSchema).min(1),
+  leadInfo: z.object({
+    firstName: z.string(),
+    email: z.string().email(),
+    phone: z.string(),
+    sendTranscript: z.boolean().optional(),
+  }).optional(),
+});
+
+// Define the schema for request validation
+const schema = z.object({
+  messages: z.array(z.object({
+    role: z.string(),
+    content: z.string(),
+  })),
+  leadInfo: z.object({
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    email: z.string().optional(),
+  }).optional(),
 });
 
 // --- Handler ---
 export default async function handler(req: any, res: any) {
+  // Check if AGENT_MODE is enabled, if so, proxy to chat-agent.ts
   if (process.env.NEXT_PUBLIC_AGENT_MODE === "on") {
     // 🕵️‍♂️ chat-agent invoked via proxy
     const url = new URL(req.url!, `http://${req.headers.host}`);
@@ -86,110 +102,53 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const parse = BodySchema.safeParse(body);
+    // Validate request body
+    const parse = schema.safeParse(body);
     if (!parse.success) {
-      res.status(400).json({ error: 'Invalid request', details: parse.error.flatten() });
+      res.status(400).json({ error: "Invalid request body" });
       return;
     }
-    const { messages } = parse.data;
-
-    // --- Pinecone + LangChain global cache ---
-    if (!(globalThis as CustomGlobalThis)._skypearlsVectorStore) {
-      const pineconeApiKey = process.env.PINECONE_API_KEY;
-      const pineconeEnv = process.env.PINECONE_ENV;
-      const pineconeIndex = process.env.PINECONE_INDEX;
-      if (!pineconeApiKey || !pineconeEnv || !pineconeIndex) {
-        res.status(500).json({ error: 'Missing Pinecone configuration' });
-        return;
-      }
-      // Pinecone client reads env vars for API key and environment
-      const pinecone = new Pinecone();
-      const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
-      (globalThis as CustomGlobalThis)._skypearlsVectorStore = await PineconeStore.fromExistingIndex(
-        embeddings,
-        { 
-          pineconeIndex: pinecone.Index(pineconeIndex),
-          namespace: "default",
-        }
-      );
-    }
-    const vectorStore = (globalThis as CustomGlobalThis)._skypearlsVectorStore;
-
-    if (!vectorStore) {
-      // This should ideally not happen if the above logic is correct and Pinecone initializes
-      throw new Error("Vector store not initialized after cache check.");
-    }
-
-    // --- LangChain QA Chain ---
-    const modelName = process.env.OPENAI_MODEL;
-    const apiKey = process.env.OPENAI_API_KEY;
-    console.log('[CHAT API] Using model:', modelName);
-    console.log('[CHAT API] Using OpenAI API key:', apiKey ? apiKey.slice(0, 8) + '...' : 'undefined');
-    
-    const model = new ChatOpenAI({
-      openAIApiKey: apiKey,
-      modelName: modelName,
-      temperature: 0.2,
+    const { messages, leadInfo } = parse.data;
+    const latestMessage = messages[messages.length - 1].content;
+    // Get or create a thread ID (can be based on the user's email or session ID)
+    const threadId = req.headers["x-thread-id"] || (leadInfo?.email ? `skypearls-${leadInfo.email}` : "default-thread");
+    // Create the checkpointer for persistence
+    const checkpointer = createCheckpointer(threadId);
+    // Create the graph
+    const graph = createVillaGraph({
+      checkpointer
     });
-
-    const condenseQuestionTemplate = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
-Chat History:
-{chat_history}
-Follow Up Input: {question}
-Standalone question:`;
-    const CONDENSE_QUESTION_PROMPT = PromptTemplate.fromTemplate(condenseQuestionTemplate);
-
-    const qaTemplate = `You are a helpful Skypearls Villas assistant. Your job is to answer questions about the luxury villas in Siargao, Philippines.
-Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
-When customers show interest, encourage them to provide their name, email, and phone for a viewing.
-Context:
-{context}
-
-Question: {question}
-Helpful Answer:`;
-    const QA_PROMPT = PromptTemplate.fromTemplate(qaTemplate);
-    
-    const chain = ConversationalRetrievalQAChain.fromLLM(
-      model,
-      vectorStore.asRetriever({ k: 4 }),
-      {
-        memory: new BufferMemory({
-          memoryKey: "chat_history", 
-          inputKey: "question",
-          outputKey: "text",
-          returnMessages: true, 
-        }),
-        questionGeneratorChainOptions: {
-          template: condenseQuestionTemplate,
-        },
-        qaChainOptions: {
-          type: "stuff",
-          prompt: QA_PROMPT,
-        },
-        returnSourceDocuments: true,
-      }
-    );
-
-    // --- Run the chain ---
-    // The user's last message is the "question"
-    const question = messages[messages.length - 1].content;
-    
-    console.log('[CHAT API] Question to chain:', question);
-    
-    const response = await chain.call({ question });
-    const reply = response.text || 'Sorry, I could not find an answer.';
-    const sourceDocuments = response.sourceDocuments || [];
-    
-    console.log('[CHAT API] Response from chain:', reply);
-    console.log('[CHAT API] Retrieved Source Documents Count:', sourceDocuments.length);
-    sourceDocuments.forEach((doc: any, index: number) => {
-      console.log(`[CHAT API] Doc ${index + 1}:`, doc.pageContent.substring(0, 100) + "...");
-      console.log(`[CHAT API] Doc ${index + 1} Metadata:`, doc.metadata);
-    });
-
-    res.status(200).json({ reply, sourceDocuments });
+    // Map incoming messages to the correct Message type
+    const mappedMessages = messages.map((m: any) => ({
+      role: m.role as 'user' | 'assistant' | 'system',
+      content: m.content,
+    }));
+    // Only include leadInfo if all required fields are present
+    let safeLeadInfo: GraphState["leadInfo"] = undefined;
+    if (leadInfo && leadInfo.firstName && leadInfo.email && (leadInfo as any).phone) {
+      safeLeadInfo = {
+        firstName: leadInfo.firstName,
+        email: leadInfo.email,
+        phone: (leadInfo as any).phone,
+        sendTranscript: (leadInfo as any).sendTranscript,
+      };
+    }
+    // Initialize state with the current messages and question
+    const initialState: GraphState = {
+      messages: mappedMessages,
+      question: latestMessage,
+      documents: undefined,
+      lastRetrieval: undefined,
+      documentQuality: undefined,
+      leadInfo: safeLeadInfo,
+    };
+    // Run the graph with the initial state
+    const result = await graph.invoke(initialState, { configurable: { thread_id: threadId } }) as GraphState;
+    // Extract the final response from the result
+    const response = result.messages[result.messages.length - 1];
+    // Return the response
+    res.status(200).json({ reply: response.content });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('[CHAT API] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }

@@ -55,6 +55,7 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [threadId, setThreadId] = useState<string>(""); // Add thread ID state
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputFormRef = useRef<HTMLFormElement>(null);
   const [debugMode] = useState(import.meta.env.VITE_DEBUG_MODE === 'true');
@@ -76,6 +77,15 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
     // Scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Initialize thread ID based on leadInfo
+  useEffect(() => {
+    if (leadInfo && leadInfo.email) {
+      // Generate a consistent thread ID based on the user's email
+      setThreadId(`skypearls-${leadInfo.email}`);
+      console.log("[ChatPanel] Set thread ID:", `skypearls-${leadInfo.email}`);
+    }
+  }, [leadInfo]);
 
   useEffect(() => {
     // Load chat history from localStorage when the component mounts and isOpen becomes true
@@ -219,14 +229,20 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
         const botResponse = { role: "assistant" as const, content: mockReply };
         setMessages(prev => [...prev, botResponse]);
       } else {
-        console.log("[ChatPanel] Attempting fetch to /api/chat with body:", JSON.stringify({ messages: updatedMessages.map(m => ({role: m.role, content: m.content})) }));
+        console.log("[ChatPanel] Attempting fetch to /api/chat with body:", JSON.stringify({ 
+          messages: updatedMessages.map(m => ({role: m.role, content: m.content})),
+          leadInfo, // Include leadInfo in the request for personalization
+        }));
+        
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "X-Thread-ID": threadId, // Include thread ID in headers for persistence
           },
           body: JSON.stringify({
-            messages: updatedMessages.map(m => ({role: m.role, content: m.content})), // Send full history
+            messages: updatedMessages.map(m => ({role: m.role, content: m.content})),
+            leadInfo, // Include leadInfo for personalization
           }),
         });
 
@@ -239,6 +255,11 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
         const data = await response.json();
         const botResponse = { role: "assistant" as const, content: data.reply };
         setMessages(prev => [...prev, botResponse]);
+        
+        // Log source documents if available for debugging
+        if (data.sourceDocuments && Array.isArray(data.sourceDocuments)) {
+          console.log("[ChatPanel] Retrieved source documents:", data.sourceDocuments.length);
+        }
       }
     } catch (error) {
       console.error("[ChatPanel] Error caught in handleSubmit:", error);
@@ -267,7 +288,8 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
             dock-chat w-full max-w-full
             sm:max-w-[425px] md:max-w-[550px] max-h-[80vh] 
             flex flex-col p-0 bg-skypearl-white border-skypearl-light shadow-xl z-[9999]
-            animate-in fade-in data-[state=open]:duration-150"
+            animate-in fade-in data-[state=open]:duration-150
+            data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:duration-150"
         >
           <DialogHeader className="p-4 border-b border-skypearl-light flex flex-row justify-between items-center">
             <DialogTitle className="text-skypearl-dark font-playfair text-lg">Chat with Skypearls Assistant</DialogTitle>
