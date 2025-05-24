@@ -140,6 +140,7 @@ export default async function handler(req: any, res: any) {
       documents: undefined,
       lastRetrieval: undefined,
       documentQuality: undefined,
+      isGreeting: undefined,
       leadInfo: safeLeadInfo,
     };
     // Run the graph with the initial state

@@ -71,6 +71,10 @@ const scrollbarStyles = `
   .typing-dot:nth-child(1) { animation-delay: -0.32s; }
   .typing-dot:nth-child(2) { animation-delay: -0.16s; }
   .typing-dot:nth-child(3) { animation-delay: 0s; }
+
+  .dialog-content .absolute.right-4.top-4 {
+    display: none !important;
+  }
 `;
 
 type ChatMessage = {
@@ -319,7 +323,7 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent 
           className="
-            dock-chat w-full max-w-full
+            dialog-content dock-chat w-full max-w-full
             sm:max-w-[425px] md:max-w-[550px] max-h-[80vh] 
             flex flex-col p-0 bg-skypearl-white border-skypearl-light shadow-xl z-[9999]
             animate-in fade-in data-[state=open]:duration-150
