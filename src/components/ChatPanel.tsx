@@ -13,7 +13,7 @@ import { LeadInfo } from "@/types"; // Import shared LeadInfo
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-// Add custom CSS for the scrollbar
+// Add custom CSS for the scrollbar and new animations
 const scrollbarStyles = `
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
@@ -37,6 +37,40 @@ const scrollbarStyles = `
     scrollbar-width: thin;
     scrollbar-color: #D4B883 #E5DDD0;
   }
+
+  @keyframes messageSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .message-animation {
+    animation: messageSlideIn 0.3s ease-out;
+  }
+
+  @keyframes typingBounce {
+    0%, 80%, 100% {
+      transform: scale(0.8);
+      opacity: 0.5;
+    }
+    40% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .typing-dot {
+    animation: typingBounce 1.4s infinite ease-in-out;
+  }
+
+  .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+  .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+  .typing-dot:nth-child(3) { animation-delay: 0s; }
 `;
 
 type ChatMessage = {
@@ -305,37 +339,142 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
               </Button>
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-skypearl-white/80">
+          <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar bg-skypearl-white/80">
             {messages.map((message, index) => (
               <div
                 key={index}
                 className={cn(
-                  "flex",
+                  "flex items-start gap-3 group message-animation",
                   message.role === "user" ? "justify-end" : "justify-start"
                 )}
               >
-                <div
-                  className={cn(
-                    'max-w-[75%] rounded-lg px-4 py-2',
-                    message.role === 'user'
-                      ? 'bg-skypearl text-white'
-                      : 'bg-skypearl-light text-skypearl-dark',
-                    'prose prose-sm' +
-                      (message.role === 'user'
-                        ? ' !prose-invert:!text-white'
-                        : '')
-                  )}
-                >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {message.content}
-                  </ReactMarkdown>
+                {/* Assistant Avatar - Left Side */}
+                {message.role === "assistant" && (
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="relative">
+                      <img 
+                        src="/skye-assistant.png" 
+                        alt="Skye Assistant" 
+                        className="w-10 h-10 rounded-full shadow-lg border-2 border-white"
+                        onError={(e) => {
+                          // Fallback if image doesn't exist
+                          const target = e.currentTarget as HTMLImageElement;
+                          const nextElement = target.nextElementSibling as HTMLElement;
+                          target.style.display = 'none';
+                          if (nextElement) nextElement.style.display = 'flex';
+                        }}
+                      />
+                      <div 
+                        className="w-10 h-10 rounded-full bg-gradient-to-br from-skypearl to-skypearl-dark flex items-center justify-center text-white font-bold text-sm shadow-lg border-2 border-white"
+                        style={{ display: 'none' }}
+                      >
+                        S
+                      </div>
+                      {/* Online indicator */}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Message Container */}
+                <div className="relative max-w-[75%] min-w-[100px]">
+                  {/* Timestamp - appears on hover */}
+                  <div className={cn(
+                    "text-xs text-gray-500/70 mb-1 transition-all duration-200 opacity-0 group-hover:opacity-100 transform group-hover:translate-y-0 translate-y-2",
+                    message.role === "user" ? "text-right pr-4" : "text-left pl-4"
+                  )}>
+                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+
+                  {/* Message Bubble */}
+                  <div className="relative">
+                    {/* Chat bubble tail */}
+                    <div
+                      className={cn(
+                        "absolute top-4 w-0 h-0 z-10",
+                        message.role === "user"
+                          ? "right-[-10px] border-l-[12px] border-l-blue-500 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent"
+                          : "left-[-10px] border-r-[12px] border-r-white border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent"
+                      )}
+                    />
+                    
+                    {/* Message Content */}
+                    <div
+                      className={cn(
+                        'rounded-2xl px-5 py-4 shadow-lg relative backdrop-blur-sm transition-all duration-200 hover:shadow-xl',
+                        message.role === 'user'
+                          ? 'bg-blue-500 text-white border border-blue-600/20'
+                          : 'bg-white/95 border border-skypearl-light/40 text-skypearl-dark hover:bg-white',
+                        'prose prose-sm max-w-none' +
+                          (message.role === 'user'
+                            ? ' prose-invert prose-headings:text-white prose-p:text-white prose-strong:text-white prose-em:text-white prose-code:text-white prose-code:bg-white/20'
+                            : ' prose-headings:text-skypearl-dark prose-p:text-skypearl-dark')
+                      )}
+                    >
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
                 </div>
+
+                {/* User Avatar - Right Side */}
+                {message.role === "user" && (
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm shadow-lg border-2 border-white">
+                      {leadInfo.firstName?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
+            
+            {/* Enhanced Typing Indicator */}
             {isLoading && (
-              <div className="flex justify-start">
-                <div className="max-w-[75%] rounded-lg px-4 py-2 bg-skypearl-light text-skypearl-dark animate-pulse">
-                  Thinking...
+              <div className="flex items-start gap-3 message-animation">
+                {/* Avatar */}
+                <div className="flex-shrink-0 mt-1">
+                  <div className="relative">
+                    <img 
+                      src="/skye-assistant.png" 
+                      alt="Skye Assistant" 
+                      className="w-10 h-10 rounded-full shadow-lg border-2 border-white"
+                                             onError={(e) => {
+                         const target = e.currentTarget as HTMLImageElement;
+                         const nextElement = target.nextElementSibling as HTMLElement;
+                         target.style.display = 'none';
+                         if (nextElement) nextElement.style.display = 'flex';
+                       }}
+                    />
+                    <div 
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-skypearl to-skypearl-dark flex items-center justify-center text-white font-bold text-sm shadow-lg border-2 border-white"
+                      style={{ display: 'none' }}
+                    >
+                      S
+                    </div>
+                    {/* Pulsing indicator when typing */}
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white animate-pulse"></div>
+                  </div>
+                </div>
+
+                {/* Typing Bubble */}
+                <div className="relative max-w-[75%]">
+                  <div className="relative">
+                    {/* Chat bubble tail */}
+                    <div className="absolute left-[-10px] top-4 w-0 h-0 z-10 border-r-[12px] border-r-white border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent" />
+                    
+                    {/* Typing Content */}
+                    <div className="rounded-2xl px-5 py-4 bg-white/95 border border-skypearl-light/40 text-skypearl-dark shadow-lg backdrop-blur-sm">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-skypearl-dark">Skye is thinking</span>
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-skypearl rounded-full typing-dot"></div>
+                          <div className="w-2 h-2 bg-skypearl rounded-full typing-dot"></div>
+                          <div className="w-2 h-2 bg-skypearl rounded-full typing-dot"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

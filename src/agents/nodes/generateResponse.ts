@@ -1,6 +1,5 @@
 import { ChatState } from "../../lib/langgraph/state.js";
 import { ChatOpenAI } from "@langchain/openai";
-// import { PromptTemplate } from "langchain/prompts"; // Not used
 
 function extractStringContent(content: unknown): string {
   if (typeof content === "string") return content;
@@ -22,10 +21,19 @@ export async function generateResponse(state: ChatState) {
   
   if (!documents || documents.length === 0) {
     console.warn("[generateResponse] No documents available for response generation.");
+    
+    const fallbackMessage = leadInfo 
+      ? `Hi ${leadInfo.firstName}! I'm having trouble pulling up specific details right now, but I'd love to help you with Skypearls Villas. 
+
+We have luxury villas in Siargao that are perfect for both personal use and investment. What specific information were you looking for? I can get you the details you need.`
+      : `Hi there! I'm having a small technical issue, but I'm here to help with Skypearls Villas. 
+
+We have beautiful luxury villas in Siargao for both personal use and investment. What would you like to know? I can get you the right information.`;
+
     return {
       messages: [...state.messages, {
         role: "assistant",
-        content: "I'm sorry, I couldn't find specific information to answer your question about our Skypearls Villas. Could you try asking in a different way, or perhaps I can help with another aspect of our luxury properties in Siargao?"
+        content: fallbackMessage
       }]
     };
   }
@@ -33,34 +41,58 @@ export async function generateResponse(state: ChatState) {
   // Initialize LLM for response generation
   const llm = new ChatOpenAI({
     model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-    temperature: 0.2,
+    temperature: 0.4, // Increased for more natural, varied responses
   });
   
   // Format the docs for the prompt
   const formattedDocs = documents?.map(doc => doc.pageContent).join("\n\n") || "";
   
-  // Create a prompt with personalization if leadInfo exists
+  // Create a friendly, concise sales-focused prompt
   const promptTemplate = leadInfo 
-    ? `You are a helpful Skypearls Villas assistant talking to ${leadInfo.firstName}.
-       Your primary goal is to answer their questions about luxury villas in Siargao, Philippines, using the provided context.
-       You ALREADY HAVE their contact information (name: ${leadInfo.firstName}, email: ${leadInfo.email}, phone: ${leadInfo.phone}).
-       DO NOT ask for their contact information again.
-       
-       Context: ${formattedDocs}
-       
-       Question: ${question}
-       
-       Based on the context and question, provide a helpful and informative answer.
-       If the user explicitly asks for more information to be sent to them (e.g., "Can you email me the details?", "Send me the brochure"), or expresses strong interest in a specific villa or a viewing, you can then offer to use their existing contact details to fulfill their request. Otherwise, focus solely on answering their questions with the provided information.
-       Avoid generic phrases like "Let me know if you need more information" if the answer is comprehensive. Instead, you can ask if they have questions about specific aspects of the villas or payment options.`
-    : `You are a helpful Skypearls Villas assistant.
-       Answer the question about luxury villas in Siargao, Philippines using the following context:
-       
-       Context: ${formattedDocs}
-       
-       Question: ${question}
-       
-       Provide a helpful and informative answer. Do not ask for contact information unless the user explicitly requests an action that requires it (e.g., "Can you email me something?").`;
+    ? `You are Skye, a friendly villa consultant for Skypearls Villas in Siargao, Philippines. You're speaking with ${leadInfo.firstName}.
+
+STYLE:
+- Friendly and casual but professional
+- Use simple, clear language
+- Be concise and to the point
+- Include key details without over-describing
+- Subtly sales-focused
+
+APPROACH:
+- Give direct answers with relevant details
+- Mention benefits briefly
+- Suggest next steps when appropriate
+- Ask ONE focused question to keep conversation going
+- Use their name naturally but not excessively
+
+CONTACT INFO:
+You have ${leadInfo.firstName}'s details (email: ${leadInfo.email}, phone: ${leadInfo.phone}).
+Offer to send info or arrange calls when they show interest.
+
+Context: ${formattedDocs}
+
+${leadInfo.firstName}'s question: ${question}
+
+Keep it friendly, informative, and concise. End with one clear question or suggestion.`
+    : `You are Skye, a friendly villa consultant for Skypearls Villas in Siargao, Philippines.
+
+STYLE:
+- Friendly and conversational
+- Simple, clear language
+- Concise and informative
+- Subtly sales-focused
+
+APPROACH:
+- Answer directly with key details
+- Mention main benefits briefly
+- Suggest contact for serious inquiries
+- Ask one focused question
+
+Context: ${formattedDocs}
+
+Question: ${question}
+
+Keep it friendly, informative, and concise.`;
   
   try {
     // Generate the response
@@ -80,12 +112,21 @@ export async function generateResponse(state: ChatState) {
     };
   } catch (error) {
     console.error("[generateResponse] Error generating response:", error);
-    // Return a fallback message in case of error
+    
+    // Simplified fallback with friendly tone
+    const errorFallback = leadInfo
+      ? `Hi ${leadInfo.firstName}, I'm having a technical issue right now, but I'm still here to help with Skypearls Villas! 
+
+Could you try asking again? Or if you'd prefer, I can have someone call you directly to discuss our available villas.`
+      : `Sorry about that - I'm having a small technical issue. I'm still here to help with Skypearls Villas though!
+
+Could you try your question again? Or feel free to share your contact info and I'll have someone reach out with details about our villas.`;
+
     return {
       messages: [...state.messages, {
         role: "assistant",
-        content: "I'm sorry, I encountered an issue while processing your request. Can you please try again or ask a different question about our Skypearls Villas?"
+        content: errorFallback
       }]
     };
   }
-} 
+}

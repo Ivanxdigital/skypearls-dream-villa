@@ -97,21 +97,43 @@ export function ChatGate({ children }: ChatGateProps) {
 
   return (
     <>
-      <Button
-        onClick={handleToggleFab}
-        className="fixed bottom-4 right-4 md:bottom-8 md:right-8 h-14 w-14 rounded-full bg-skypearl shadow-lg hover:bg-skypearl-dark overflow-hidden p-0 focus:outline-none focus:ring-2 focus:ring-skypearl-dark focus:ring-offset-2 z-50"
-        aria-label={chatOpen ? "Close chat" : "Open chat"}
-      >
-        {chatOpen ? (
-          <X className="h-7 w-7 text-white" />
-        ) : (
-          <img
-            src="/skye-assistant.png"
-            alt="Skye assistant"
-            className="h-full w-full object-cover"
-          />
-        )}
-      </Button>
+      {/* Luxury FAB Container with Tooltip */}
+      <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 group">
+        {/* Tooltip - Hidden on mobile to avoid touch issues */}
+        <div className="absolute bottom-full right-0 mb-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-lg hidden md:block transform translate-y-1 group-hover:translate-y-0">
+          Chat with Skye
+          {/* Tooltip Arrow */}
+          <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+        </div>
+
+        <Button
+          onClick={handleToggleFab}
+          className="relative h-16 w-16 rounded-full bg-gradient-to-br from-skypearl via-skypearl to-skypearl-dark shadow-2xl hover:shadow-skypearl/30 overflow-hidden p-0 focus:outline-none focus:ring-4 focus:ring-skypearl/50 focus:ring-offset-2 transition-all duration-300 ease-out hover:scale-110 active:scale-95 hover:animate-pulse border-2 border-white/20"
+          aria-label={chatOpen ? "Close chat" : "Open chat"}
+          style={{
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 0 30px rgba(130, 180, 200, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+          }}
+        >
+          {chatOpen ? (
+            <X className="h-8 w-8 text-white transition-all duration-300 group-hover:rotate-90 drop-shadow-sm" />
+          ) : (
+            <>
+              <img
+                src="/skye-assistant.png"
+                alt="Skye assistant"
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              {/* Notification Dot */}
+              <div className="absolute -top-1 -right-1 h-4 w-4 bg-gradient-to-r from-red-500 to-red-600 rounded-full border-2 border-white shadow-lg animate-pulse">
+                <div className="absolute inset-0 bg-red-400 rounded-full animate-ping opacity-75"></div>
+              </div>
+            </>
+          )}
+          
+          {/* Inner glow effect */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/10 pointer-events-none"></div>
+        </Button>
+      </div>
 
       {showLeadForm && !leadInfo && (
         <LeadForm
