@@ -283,9 +283,16 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
           className="
             dialog-content dock-chat w-full max-w-full
             sm:max-w-[425px] md:max-w-[550px] max-h-[80vh] 
-            flex flex-col p-0 bg-skypearl-white border-skypearl-light shadow-xl z-[9999]
-            animate-in fade-in data-[state=open]:duration-150
-            data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:duration-150"
+            flex flex-col p-0 bg-skypearl-white border-skypearl-light shadow-xl z-50
+            animate-in fade-in data-[state=open]:duration-300 data-[state=open]:ease-out
+            data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:duration-300 data-[state=closed]:ease-in-out"
+          onPointerDownOutside={(e) => {
+            // Allow FAB interaction by preventing default dialog close behavior
+            const target = e.target as Element;
+            if (target.closest('[aria-label*="chat"]') || target.closest('.group')) {
+              e.preventDefault();
+            }
+          }}
         >
           <DialogHeader className="p-4 border-b border-skypearl-light flex flex-row justify-between items-center">
             <DialogTitle className="text-skypearl-dark font-playfair text-lg">Chat with Skypearls Assistant</DialogTitle>

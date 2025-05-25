@@ -80,7 +80,7 @@ export function ChatGate({ children }: ChatGateProps) {
   return (
     <>
       {/* Luxury FAB Container with Tooltip */}
-      <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 group">
+      <div className="fixed bottom-4 right-4 md:bottom-6 md:right-10 z-50 group">
         {/* Tooltip - Hidden on mobile to avoid touch issues */}
         <div className="absolute bottom-full right-0 mb-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-lg hidden md:block transform translate-y-1 group-hover:translate-y-0">
           Chat with Skye
@@ -90,14 +90,14 @@ export function ChatGate({ children }: ChatGateProps) {
 
         <Button
           onClick={handleToggleFab}
-          className="relative h-16 w-16 rounded-full bg-gradient-to-br from-skypearl via-skypearl to-skypearl-dark shadow-2xl hover:shadow-skypearl/30 overflow-hidden p-0 focus:outline-none focus:ring-4 focus:ring-skypearl/50 focus:ring-offset-2 transition-all duration-300 ease-out hover:scale-110 active:scale-95 hover:animate-pulse border-2 border-white/20"
+          className="relative h-16 w-16 rounded-full bg-gradient-to-br from-skypearl via-skypearl to-skypearl-dark shadow-lg hover:shadow-skypearl/20 overflow-hidden p-0 focus:outline-none focus:ring-2 focus:ring-skypearl/40 focus:ring-offset-1 transition-all duration-200 ease-out hover:scale-105 active:scale-95 border border-white/10 pointer-events-auto"
           aria-label={chatOpen ? "Close chat" : "Open chat"}
           style={{
             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 0 30px rgba(130, 180, 200, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
           }}
         >
           {chatOpen ? (
-            <X className="h-8 w-8 text-white transition-all duration-300 group-hover:rotate-90 drop-shadow-sm" />
+            <X className="h-6 w-6 text-white transition-all duration-200 ease-in-out group-hover:rotate-45 drop-shadow-sm" />
           ) : (
             <>
               <img
@@ -106,8 +106,8 @@ export function ChatGate({ children }: ChatGateProps) {
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
               {/* Notification Dot */}
-              <div className="absolute -top-1 -right-1 h-4 w-4 bg-gradient-to-r from-red-500 to-red-600 rounded-full border-2 border-white shadow-lg animate-pulse">
-                <div className="absolute inset-0 bg-red-400 rounded-full animate-ping opacity-75"></div>
+              <div className="absolute -top-1 -right-1 h-3 w-3 bg-gradient-to-r from-red-500 to-red-600 rounded-full border-2 border-white shadow-sm">
+                <div className="absolute inset-0 bg-red-400 rounded-full animate-pulse opacity-40"></div>
               </div>
             </>
           )}
