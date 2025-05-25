@@ -282,7 +282,7 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
         <DialogContent 
           className="
             dialog-content dock-chat w-full max-w-full
-            sm:max-w-[425px] md:max-w-[550px] max-h-[80vh] 
+            sm:max-w-[380px] md:max-w-[450px] max-h-[70vh] 
             flex flex-col p-0 bg-skypearl-white border-skypearl-light shadow-xl z-50
             animate-in fade-in data-[state=open]:duration-300 data-[state=open]:ease-out
             data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:duration-300 data-[state=closed]:ease-in-out"
@@ -294,17 +294,17 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
             }
           }}
         >
-          <DialogHeader className="p-4 border-b border-skypearl-light flex flex-row justify-between items-center">
-            <DialogTitle className="text-skypearl-dark font-playfair text-lg">Chat with Skypearls Assistant</DialogTitle>
+          <DialogHeader className="p-4 bg-white/80 backdrop-blur-sm flex flex-row justify-between items-center">
+            <DialogTitle className="text-xl font-semibold text-gray-900">Chat with Skypearls Assistant</DialogTitle>
             {/* End Chat button in header for better visibility */}
              <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm" 
                 onClick={handleEndChat} 
-                className="text-skypearl-dark hover:bg-skypearl-light/50"
+                className="text-gray-600 hover:text-gray-900 border-gray-200 hover:border-gray-300"
                 aria-label="End Chat"
               >
-                <XCircle className="h-5 w-5 mr-1" /> End Chat
+                End Chat
               </Button>
           </DialogHeader>
           
@@ -357,27 +357,17 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
 
                   {/* Message Bubble */}
                   <div className="relative">
-                    {/* Chat bubble tail */}
-                    <div
-                      className={cn(
-                        "absolute top-4 w-0 h-0 z-10",
-                        message.role === "user"
-                          ? "right-[-10px] border-l-[12px] border-l-blue-500 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent"
-                          : "left-[-10px] border-r-[12px] border-r-white border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent"
-                      )}
-                    />
-                    
                     {/* Message Content */}
                     <div
                       className={cn(
-                        'rounded-2xl px-5 py-4 shadow-lg relative backdrop-blur-sm transition-all duration-200 hover:shadow-xl',
+                        'rounded-2xl px-4 py-3 shadow-sm relative',
                         message.role === 'user'
-                          ? 'bg-blue-500 text-white border border-blue-600/20'
-                          : 'bg-white/95 border border-skypearl-light/40 text-skypearl-dark hover:bg-white',
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-50 text-gray-900',
                         'prose prose-sm max-w-none' +
                           (message.role === 'user'
                             ? ' prose-invert prose-headings:text-white prose-p:text-white prose-strong:text-white prose-em:text-white prose-code:text-white prose-code:bg-white/20'
-                            : ' prose-headings:text-skypearl-dark prose-p:text-skypearl-dark')
+                            : ' prose-headings:text-gray-900 prose-p:text-gray-900')
                       )}
                     >
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -429,13 +419,10 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
                 {/* Typing Bubble */}
                 <div className="relative max-w-[75%]">
                   <div className="relative">
-                    {/* Chat bubble tail */}
-                    <div className="absolute left-[-10px] top-4 w-0 h-0 z-10 border-r-[12px] border-r-white border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent" />
-                    
                     {/* Typing Content */}
-                    <div className="rounded-2xl px-5 py-4 bg-white/95 border border-skypearl-light/40 text-skypearl-dark shadow-lg backdrop-blur-sm">
+                    <div className="rounded-2xl px-4 py-3 bg-gray-50 text-gray-900 shadow-sm">
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-skypearl-dark">Skye is thinking</span>
+                        <span className="text-sm font-medium text-gray-900">Skye is thinking</span>
                         <div className="flex gap-1">
                           <div className="w-2 h-2 bg-skypearl rounded-full typing-dot"></div>
                           <div className="w-2 h-2 bg-skypearl rounded-full typing-dot"></div>
