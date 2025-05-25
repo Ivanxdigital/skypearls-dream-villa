@@ -90,30 +90,22 @@ export function ChatGate({ children }: ChatGateProps) {
 
         <Button
           onClick={handleToggleFab}
-          className="relative h-16 w-16 rounded-full bg-gradient-to-br from-skypearl via-skypearl to-skypearl-dark shadow-lg hover:shadow-skypearl/20 overflow-hidden p-0 focus:outline-none focus:ring-2 focus:ring-skypearl/40 focus:ring-offset-1 transition-all duration-200 ease-out hover:scale-105 active:scale-95 border border-white/10 pointer-events-auto"
+          className="relative h-16 w-16 rounded-full bg-skypearl shadow-md hover:shadow-lg overflow-hidden p-0 focus:outline-none focus:ring-2 focus:ring-skypearl/40 focus:ring-offset-1 transition-all duration-200 ease-out pointer-events-auto"
           aria-label={chatOpen ? "Close chat" : "Open chat"}
-          style={{
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 0 30px rgba(130, 180, 200, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-          }}
         >
           {chatOpen ? (
-            <X className="h-6 w-6 text-white transition-all duration-200 ease-in-out group-hover:rotate-45 drop-shadow-sm" />
+            <X className="h-6 w-6 text-white transition-all duration-200 ease-in-out" />
           ) : (
             <>
               <img
                 src="/skye-assistant.png"
                 alt="Skye assistant"
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                className="h-full w-full object-cover"
               />
               {/* Notification Dot */}
-              <div className="absolute -top-1 -right-1 h-3 w-3 bg-gradient-to-r from-red-500 to-red-600 rounded-full border-2 border-white shadow-sm">
-                <div className="absolute inset-0 bg-red-400 rounded-full animate-pulse opacity-40"></div>
-              </div>
+              <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white shadow-sm"></div>
             </>
           )}
-          
-          {/* Inner glow effect */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/10 pointer-events-none"></div>
         </Button>
       </div>
 
