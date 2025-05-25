@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-A full-stack RAG-based AI assistant combining a React/Tailwind frontend, a Node/Vercel backend, Pinecone for vector retrieval, OpenAI for LLM calls, and LangGraph/LangChain for orchestration. This doc maps out key files, data flows, and integration points to help an AI coding agent refactor, extend, or debug the system.
+A full-stack RAG-based AI assistant combining a React/Tailwind frontend, a Node/Vercel backend, Pinecone for vector retrieval, OpenAI for LLM calls, and LangGraph/LangChain for orchestration. **Recently refactored** to use WhatsApp contact sharing instead of email-based lead capture for a simpler, more direct user experience.
 
 ---
 
@@ -14,7 +14,7 @@ A full-stack RAG-based AI assistant combining a React/Tailwind frontend, a Node/
 
    * [`api/chat.ts`](#apichatts)
    * [`api/chat-agent.ts`](#apichat-agentts)
-   * [`api/notify-lead.ts`](#apinotify-leadts)
+   * [`api/notify-lead.ts`](#apinotify-leadts) _(legacy)_
 4. [Agents & Workflow](#agents--workflow)
 
    * [`villa-graph.ts`](#villa-graphts)
@@ -29,9 +29,10 @@ A full-stack RAG-based AI assistant combining a React/Tailwind frontend, a Node/
 7. [External Services & Libraries](#external-services--libraries)
 8. [Docs Folder](#docs-folder)
 9. [Key Notes & Gotchas](#key-notes--gotchas)
-10. [Extensibility & Refactoring Tips](#extensibility--refactoring-tips)
-11. [Environment & Deployment](#environment--deployment)
-12. [Future Improvements](#future-improvements)
+10. [Recent WhatsApp Refactor Changes](#recent-whatsapp-refactor-changes)
+11. [Extensibility & Refactoring Tips](#extensibility--refactoring-tips)
+12. [Environment & Deployment](#environment--deployment)
+13. [Future Improvements](#future-improvements)
 
 ---
 
@@ -42,7 +43,8 @@ A full-stack RAG-based AI assistant combining a React/Tailwind frontend, a Node/
 * **RAG Pipeline**: Orchestrated via LangGraph (`src/agents/villa-graph.ts`).
 * **Fallback Agent**: LangChain AgentExecutor (`api/chat-agent.ts`) with a custom retriever tool.
 * **Vector Store**: Pinecone accessed via `src/lib/vector-store.ts`.
-* **Email Notifications**: Resend.com via `api/notify-lead.ts`.
+* **Contact Strategy**: **WhatsApp-first approach** - AI proactively shares +63 999 370 2550 for direct contact.
+* **Email Notifications**: ~~Resend.com via `api/notify-lead.ts`~~ _(disabled in current flow)_.
 
 All chat state persists via thread IDs (`X-Thread-ID` header) and `localStorage` on the client.
 
@@ -50,13 +52,15 @@ All chat state persists via thread IDs (`X-Thread-ID` header) and `localStorage`
 
 ## Data Flow
 
+**🔄 Updated Flow (Post-WhatsApp Refactor):**
+
 1. **User opens chat** → `ChatGate.tsx` checks `localStorage` for lead info.
-2. **Lead capture** (if needed) → `LeadForm.tsx` → POST `/api/notify-lead` (business only).
+2. **Lead capture** (simplified) → `LeadForm.tsx` → ~~POST `/api/notify-lead`~~ _(removed)_.
 3. **ChatPanel** mounts → loads greeting & history from `localStorage`.
 4. **User message** → POST `/api/chat` with `{ messages, leadInfo }` + `X-Thread-ID`.
-5. **LangGraph** (or Agent) retrieves docs, grades, loops, and generates reply.
+5. **LangGraph** (or Agent) retrieves docs, grades, loops, and generates reply **with WhatsApp sharing**.
 6. **Response** → JSON `{ reply }` → `ChatPanel` displays and saves to `localStorage`.
-7. **Chat end** (if opted) → POST `/api/notify-lead` with transcript → emails sent.
+7. **Chat end** → ~~POST `/api/notify-lead`~~ _(no longer sends transcripts)_.
 
 ---
 
@@ -95,11 +99,11 @@ const result = await executor.invoke({ input: question });
 res.json({ reply: result.output });
 ```
 
-### `api/notify-lead.ts`
+### `api/notify-lead.ts` _(Legacy - Not Used)_
 
-* Validates `{ lead, sendTranscript, transcript }` via Zod.
-* Always emails business with lead data.
-* If `sendTranscript` is true, emails visitor with full transcript.
+* ⚠️ **Status**: Not called by current frontend flow.
+* Previously validated `{ lead, sendTranscript, transcript }` via Zod.
+* Previously emailed business with lead data and sent transcripts to visitors.
 * Uses `resend.emails.send()` with HTML templates.
 
 ---
@@ -113,8 +117,8 @@ res.json({ reply: result.output });
   1. **retrieveDocuments**
   2. **gradeDocuments**
   3. **reformulateQuery** (if quality < threshold)
-  4. **generateResponse**
-  5. **handleGreeting** (branch on `isGreeting`)
+  4. **generateResponse** 🆕 _Now includes WhatsApp sharing logic_
+  5. **handleGreeting** 🆕 _Enhanced with occasional WhatsApp mentions_
 * Branch logic based on `state.documentQuality` (0–1) and `state.isGreeting`.
 
 #### Workflow Diagram
@@ -123,8 +127,8 @@ res.json({ reply: result.output });
 __start__
   ↓
 retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __end__
-                             ↓
-              (quality > 0.7) → generateResponse → __end__
+                             ↓                            ↓
+              (quality > 0.7) → generateResponse → __end__ (may include WhatsApp)
                              ↓
              (quality ≤ 0.7) → reformulateQuery ─┐
                                                   ↓
@@ -136,8 +140,8 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 * **retrieveDocuments** (`villa-graph.ts`): Pinecone similaritySearch(question, 4).
 * **gradeDocuments**: Detect greeting via regex, else LLM rates relevance (0–1).
 * **reformulateQuery**: LLM rewrites question for better retrieval.
-* **generateResponse**: LLM crafts answer using top docs as context; personalizes with leadInfo.
-* **handleGreeting**: Random canned greetings, personalized by `leadInfo.firstName`.
+* **generateResponse** 🆕: LLM crafts answer using top docs as context; **automatically includes WhatsApp (+63 999 370 2550) when users show interest** (pricing, contact, viewing, purchase intent, etc.).
+* **handleGreeting** 🆕: Random greetings personalized by `leadInfo.firstName`; 30% chance to include WhatsApp mention.
 
 ### `src/agents/retriever-tool.ts`
 
@@ -148,34 +152,40 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 
 ## Frontend Components
 
-### `ChatGate.tsx`
+### `ChatGate.tsx` 🆕
 
 * Stateful component managing lead capture and chat toggle.
 * **On mount**: loads `leadInfo` from `localStorage` (`skypearls_lead`).
-* **LeadForm**: modal to collect `{ firstName, email, phone, sendTranscript }`.
-* **Lead submit**: saves to state+`localStorage`, opens chat, POST `/api/notify-lead`.
-* **Reset**: clears storage and state (debugging).
+* **LeadForm**: modal to collect **only `firstName`** _(email/phone optional)_.
+* **Lead submit**: saves to state+`localStorage`, opens chat, ~~POST `/api/notify-lead`~~ _(removed)_.
+* **Reset**: clears storage and state (debugging) using `firstName` as key.
 
-### `LeadForm.tsx`
+### `LeadForm.tsx` 🆕
 
 * Radix Dialog + React Hook Form + Zod for validation.
-* Fields: firstName, email, phone, sendTranscript switch.
+* **Simplified fields**: 
+  * `firstName` _(required)_
+  * `email` _(optional - backward compatibility)_
+  * `phone` _(optional - backward compatibility)_
+  * ~~`sendTranscript` switch~~ _(removed)_
+* **Updated copy**: Mentions WhatsApp contact sharing approach.
 * Calls `onSubmit(LeadInfo)`.
 
-### `ChatPanel.tsx`
+### `ChatPanel.tsx` 🆕
 
 * Manages `messages: {role,content}[]` and UI.
-* **Init**: greeting message, loads `skypearls_chat_history_<email>` from `localStorage`.
+* **Init**: greeting message, loads `skypearls_chat_history_<firstName>` from `localStorage` _(changed from email)_.
 * **Send**: on user submit, append message, POST `/api/chat`, append assistant reply.
-* **Loading**: displays “Thinking…” bubble.
-* **End Chat**: if `sendTranscript`, POST `/api/notify-lead` with full transcript.
+* **Loading**: displays "Thinking…" bubble.
+* **End Chat**: ~~if `sendTranscript`, POST `/api/notify-lead`~~ _(removed transcript functionality)_.
+* **Thread ID**: Now uses `firstName` + timestamp instead of email.
 * **UI**: uses shadcn Dialog, ReactMarkdown for rendering messages.
 
 ---
 
 ## Frontend–Backend Interaction
 
-1. **Chat open** → optional lead capture.
+1. **Chat open** → simplified lead capture (firstName only).
 2. **Message send**:
 
    ```js
@@ -185,9 +195,9 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
      body: JSON.stringify({ messages, leadInfo })
    })
    ```
-3. **Backend** invokes LangGraph or Agent → returns `{ reply }`.
+3. **Backend** invokes LangGraph or Agent → returns `{ reply }` with potential WhatsApp sharing.
 4. **Frontend** updates UI + persists to `localStorage`.
-5. **Chat end** triggers transcript email if opted.
+5. **Chat end** → ~~triggers transcript email~~ _(no longer applicable)_.
 
 ---
 
@@ -197,7 +207,8 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 * **Pinecone**: vector store for retrieval (via `OpenAIEmbeddings`).
 * **LangGraph**: custom RAG orchestration.
 * **LangChain**: agent executor & tools.
-* **Resend.com**: transactional emails.
+* **WhatsApp**: Direct contact via +63 999 370 2550 _(shared by AI)_.
+* ~~**Resend.com**: transactional emails~~ _(not used in current flow)_.
 * **React/Tailwind/Shadcn UI**: frontend styling & components.
 
 ---
@@ -205,18 +216,57 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 ## Docs Folder
 
 * **`docs/rag-chatbot.md`**: up-to-date flow diagram & summary.
+* **`docs/refactor_plan_RAG_lead.md`**: WhatsApp refactor plan and implementation guide.
 * Other PRDs (`langgraph-migration-prd.md`, etc.) are **outdated** but provide design rationale.
 
 ---
 
 ## Key Notes & Gotchas
 
-* **Env vars**: `OPENAI_API_KEY`, `PINECONE_API_KEY`, `PINECONE_INDEX`, `RESEND_API_KEY`, `LEAD_EMAIL_TO`.
+* **Env vars**: `OPENAI_API_KEY`, `PINECONE_API_KEY`, `PINECONE_INDEX`, ~~`RESEND_API_KEY`, `LEAD_EMAIL_TO`~~ _(legacy)_.
 * **Agent flag**: `NEXT_PUBLIC_AGENT_MODE` toggles between LangGraph & LangChain agent.
-* **Storage keys**: `skypearls_lead`, `skypearls_chat_history_<email>`.
+* **Storage keys**: `skypearls_lead`, `skypearls_chat_history_<firstName>` _(changed from email)_.
 * **Streaming**: none; calls await full response.
 * **Error handling**: 500s return generic error; consider retry logic.
 * **Checkpointer**: LangGraph uses file-based storage by thread ID; ensure write access or swap to DB.
+* **WhatsApp Number**: +63 999 370 2550 _(hardcoded in agent responses)_.
+
+---
+
+## Recent WhatsApp Refactor Changes
+
+### 🔄 **What Changed (December 2024)**
+
+#### **Data Structure**
+- `LeadInfo` interface: `email`, `phone`, `sendTranscript` now optional
+- Only `firstName` required for chat initiation
+
+#### **Frontend Components**
+- **LeadForm**: Simplified to firstName-only requirement with WhatsApp context
+- **ChatGate**: Removed automatic email notifications on lead submission
+- **ChatPanel**: 
+  - Removed transcript email functionality
+  - Updated localStorage keys from email-based to firstName-based
+  - Updated thread ID generation
+
+#### **AI Behavior**
+- **generateResponse**: Added automatic WhatsApp sharing triggers:
+  - Contact terms: "contact", "call", "phone", "reach out"
+  - Pricing: "price", "cost", "how much", "budget"
+  - Viewing: "schedule", "visit", "tour", "viewing"
+  - Purchase intent: "buy", "purchase", "invest", "interested"
+  - Info requests: "details", "information", "brochure"
+- **handleGreeting**: 30% chance to naturally mention WhatsApp availability
+
+#### **Contact Flow**
+- **Before**: Email capture → Chat → Optional transcript email
+- **After**: Name capture → Chat with proactive WhatsApp sharing → Direct WhatsApp contact
+
+### 🎯 **Benefits**
+- Simpler user onboarding (no email/phone required)
+- Direct communication channel via WhatsApp
+- Reduced technical dependencies (no email service issues)
+- More natural conversation flow with proactive contact sharing
 
 ---
 
@@ -228,6 +278,7 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 * Enhance error paths in `api/chat.ts` for graceful degradation.
 * Replace file-based checkpointer with Redis/Mongo for horizontal scaling.
 * Add analytics middleware to log query/timing data.
+* **WhatsApp Integration**: Consider WhatsApp Business API for automated responses.
 
 ---
 
@@ -236,7 +287,7 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 * **Local**: `.env.local` for dev; uses file-based checkpointer.
 * **Prod**: Vercel; env vars set in project settings.
 * **Pinecone**: ensure network access from Vercel.
-* **Resend**: verify sender domain.
+* ~~**Resend**: verify sender domain~~ _(not required for current flow)_.
 
 ---
 
@@ -245,9 +296,11 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 * Streaming chat with partial tokens.
 * Client-side caching for repeated queries.
 * Multi-language support for chatbot.
+* WhatsApp Business API integration for seamless handoff.
 * Integration with booking/calendar tools via new LangChain tools.
 * UI refresh: add typing indicators, quick-reply buttons.
+* Analytics tracking for WhatsApp conversion rates.
 
 ---
 
-*Generated for AI coding agents — include this doc in your prompt to enable high-context refactoring, debugging, or feature development.*
+*Generated for AI coding agents — include this doc in your prompt to enable high-context refactoring, debugging, or feature development. Last updated: December 2024 (WhatsApp Refactor).*

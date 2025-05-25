@@ -16,6 +16,15 @@ const howAreYouResponses = [
   "I'm functioning optimally! How can I help you explore Skypearls Villas today?"
 ];
 
+// Enhanced greetings that sometimes include WhatsApp info
+const enhancedGreetings = [
+  "Hello! I'm here to help you learn about our luxury villas in Siargao. What would you like to know?",
+  "Hi there! I can tell you about our beautiful Skypearls Villas. What interests you most?",
+  "Welcome! I'm here to assist with any questions about our premium villas. How can I help?",
+  "Greetings! Ready to explore our luxury villa offerings in Siargao? What can I tell you?",
+  "Hello! I'm your villa consultant for Skypearls. For detailed inquiries, we're also available on WhatsApp at +63 999 370 2550. What would you like to know today?"
+];
+
 function getRandomResponse(responses: string[]): string {
   return responses[Math.floor(Math.random() * responses.length)];
 }
@@ -32,7 +41,12 @@ export async function handleGreeting(state: ChatState) {
   if (lowerQuestion.includes("how are you") || lowerQuestion.includes("how's it going")) {
     responseContent = getRandomResponse(howAreYouResponses);
   } else {
-    responseContent = getRandomResponse(greetingResponses);
+    // 30% chance to use enhanced greeting (which may include WhatsApp)
+    if (Math.random() < 0.3) {
+      responseContent = getRandomResponse(enhancedGreetings);
+    } else {
+      responseContent = getRandomResponse(greetingResponses);
+    }
   }
 
   if (userName) {
@@ -51,4 +65,4 @@ export async function handleGreeting(state: ChatState) {
   return {
     messages: [new AIMessage({ content: responseContent })],
   };
-} 
+}

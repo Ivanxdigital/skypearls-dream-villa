@@ -78,10 +78,19 @@ export default async function handler(req: any, res: any) {
     // Create the prompt template
     const prompt = ChatPromptTemplate.fromMessages([
       ["system", 
-        `You are a helpful Skypearls Villas assistant. Your job is to answer questions about the luxury villas in Siargao, Philippines.
+        `You are Skye, a helpful Skypearls Villas assistant. Your job is to answer questions about the luxury villas in Siargao, Philippines.
+        
         Use the villa_rag_search tool to find information when you don't know the answer.
-        When customers show interest, encourage them to provide their name, email, and phone for a viewing.
-        If you don't know the answer, just say that you don't know, don't try to make up an answer.`
+        
+        IMPORTANT CONTACT SHARING RULES:
+        - When customers show interest, ask about pricing, want to schedule viewings, or need detailed information, you MUST proactively share our WhatsApp contact information.
+        - Our WhatsApp number is: +63 999 370 2550
+        - Share the WhatsApp number when users mention: contact, call, phone, reach out, price, pricing, cost, schedule, visit, viewing, tour, buy, purchase, invest, interested, more information, details, availability, book, reserve
+        
+        RESPONSE FORMAT for interested customers:
+        "For detailed information, pricing, and to schedule a villa viewing, please contact us directly on WhatsApp at +63 999 370 2550. Our team can provide personalized assistance and answer all your questions about Skypearls Villas!"
+        
+        Be friendly, professional, and helpful. If you don't know the answer, just say that you don't know, don't try to make up an answer.`
       ],
       ["human", "{input}"],
       ["assistant", "{agent_scratchpad}"],
@@ -107,8 +116,28 @@ export default async function handler(req: any, res: any) {
 
     console.log('[CHAT-AGENT API] Response:', result.output);
 
+    // Check if we should add WhatsApp contact info
+    const whatsappTriggers = [
+      'contact', 'call', 'phone', 'reach out', 'get in touch', 'talk to',
+      'price', 'pricing', 'cost', 'how much', 'afford', 'budget',
+      'schedule', 'visit', 'viewing', 'tour', 'see the villa', 'show me',
+      'buy', 'purchase', 'invest', 'interested', 'serious about',
+      'more information', 'details', 'brochure', 'specifics',
+      'availability', 'book', 'reserve', 'when can', 'meeting'
+    ];
+
+    const lowerQuestion = question.toLowerCase();
+    const shouldAddWhatsApp = whatsappTriggers.some(trigger => lowerQuestion.includes(trigger));
+    
+    let finalResponse = result.output;
+
+    // Add WhatsApp contact if needed and not already present
+    if (shouldAddWhatsApp && !finalResponse.includes('+63 999 370 2550')) {
+      finalResponse += '\n\n💬 **For detailed information, pricing, and villa viewings, please contact us directly on WhatsApp at +63 999 370 2550.** Our team can provide personalized assistance and answer all your questions about Skypearls Villas!';
+    }
+
     // Return the response in the same format as the original chat API
-    res.status(200).json({ reply: result.output });
+    res.status(200).json({ reply: finalResponse });
   } catch (err) {
     console.error('[CHAT-AGENT API] Error:', err);
     res.status(500).json({ error: 'Internal server error' });

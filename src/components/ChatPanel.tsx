@@ -118,17 +118,18 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
 
   // Initialize thread ID based on leadInfo
   useEffect(() => {
-    if (leadInfo && leadInfo.email) {
-      // Generate a consistent thread ID based on the user's email
-      setThreadId(`skypearls-${leadInfo.email}`);
-      console.log("[ChatPanel] Set thread ID:", `skypearls-${leadInfo.email}`);
+    if (leadInfo && leadInfo.firstName) {
+      // Generate a consistent thread ID based on the user's firstName and timestamp
+      const timestamp = Date.now();
+      setThreadId(`skypearls-${leadInfo.firstName}-${timestamp}`);
+      console.log("[ChatPanel] Set thread ID:", `skypearls-${leadInfo.firstName}-${timestamp}`);
     }
   }, [leadInfo]);
 
   useEffect(() => {
     // Load chat history from localStorage when the component mounts and isOpen becomes true
     if (isOpen && leadInfo && leadInfo.firstName) {
-      const savedMessages = localStorage.getItem(`skypearls_chat_history_${leadInfo.email}`); // Namespace history by email
+      const savedMessages = localStorage.getItem(`skypearls_chat_history_${leadInfo.firstName}`); // Namespace history by firstName
       if (savedMessages) {
         try {
           const parsedHistory: ChatMessage[] = JSON.parse(savedMessages);
@@ -137,7 +138,7 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
             setMessages(parsedHistory);
           } else {
             // If history doesn't match or is invalid, start fresh with greeting
-            localStorage.removeItem(`skypearls_chat_history_${leadInfo.email}`);
+            localStorage.removeItem(`skypearls_chat_history_${leadInfo.firstName}`);
             setMessages([
               {
                 role: "assistant",
@@ -147,7 +148,7 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
           }
         } catch (error) {
           console.error("Failed to parse saved chat history:", error);
-          localStorage.removeItem(`skypearls_chat_history_${leadInfo.email}`);
+          localStorage.removeItem(`skypearls_chat_history_${leadInfo.firstName}`);
           setMessages([
             {
               role: "assistant",
@@ -169,8 +170,8 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
 
   useEffect(() => {
     // Save chat history to localStorage whenever messages change, if chat is open and leadInfo exists
-    if (isOpen && messages.length > 1 && leadInfo && leadInfo.email) { // Only save if more than initial greeting
-      localStorage.setItem(`skypearls_chat_history_${leadInfo.email}`, JSON.stringify(messages));
+    if (isOpen && messages.length > 1 && leadInfo && leadInfo.firstName) { // Only save if more than initial greeting
+      localStorage.setItem(`skypearls_chat_history_${leadInfo.firstName}`, JSON.stringify(messages));
     }
   }, [messages, isOpen, leadInfo]);
 
@@ -186,54 +187,11 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
     }, 300);
   };
 
-  const notifyLead = async (currentMessages: ChatMessage[]) => {
-    if (!leadInfo || !leadInfo.sendTranscript) return; // Only proceed if transcript sending is enabled
-    
-    try {
-      console.log("Attempting to notify about lead (for transcript):", leadInfo);
-      
-      if (debugMode) {
-        console.log("MOCK API CALL: Notifying about lead for transcript sending.");
-        return;
-      }
-      
-      const response = await fetch("/api/notify-lead", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          lead: {
-            firstName: leadInfo.firstName,
-            email: leadInfo.email,
-            phone: leadInfo.phone,
-          },
-          sendTranscript: leadInfo.sendTranscript,
-          transcript: currentMessages.map(m => `${m.role}: ${m.content}`).join("\n"),
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Failed to notify about lead (transcript):", response.status, errorText);
-        throw new Error(`Failed to notify about lead (transcript). Status: ${response.status}. Body: ${errorText}`);
-      }
-      
-      console.log("Successfully notified lead (transcript sent/handled by backend).");
-    } catch (error) {
-      console.error("Error notifying about lead (transcript):", error);
-      // Optionally inform user of failure, but don't block UI flow.
-    }
-  };
-
   const handleEndChat = async () => {
-    if (leadInfo.sendTranscript) {
-      await notifyLead(messages); // Pass current messages to notifyLead
-    }
     onOpenChange(false); // Close the chat panel
     onReset();
     // Optionally clear chat history from local storage upon explicit end chat
-    // localStorage.removeItem(`skypearls_chat_history_${leadInfo.email}`);
+    // localStorage.removeItem(`skypearls_chat_history_${leadInfo.firstName}`);
     // setMessages([]); // Reset messages state for next opening, or rely on initial load logic
   };
 

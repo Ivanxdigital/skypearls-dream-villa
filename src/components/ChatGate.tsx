@@ -25,7 +25,7 @@ export function ChatGate({ children }: ChatGateProps) {
       const storedLead = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (storedLead) {
         const parsedLead: LeadInfo = JSON.parse(storedLead);
-        if (parsedLead && parsedLead.firstName && parsedLead.email && parsedLead.phone) {
+        if (parsedLead && parsedLead.firstName) {
           setLeadInfo(parsedLead);
           // Do not automatically show the form or chat on load, let user action decide
         } else {
@@ -57,24 +57,6 @@ export function ChatGate({ children }: ChatGateProps) {
     }
     setShowLeadForm(false);
     setChatOpen(true); // Open chat after successful lead submission
-
-    // Immediate lead notification to the business
-    try {
-      console.log('[ChatGate] Notifying business of new lead:', data);
-      await fetch("/api/notify-lead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lead: data,
-          transcript: "", // No transcript at this stage, just lead info
-          sendTranscript: false // Not sending transcript to visitor yet
-        })
-      });
-      console.log('[ChatGate] Business notification for new lead sent.');
-    } catch (error) {
-      console.error('[ChatGate] Error sending immediate lead notification:', error);
-      // Non-critical for chat opening, so just log error and continue
-    }
   };
 
   const handleLeadFormOpenChange = (isOpen: boolean) => {
@@ -88,8 +70,8 @@ export function ChatGate({ children }: ChatGateProps) {
 
   const handleReset = () => {
     localStorage.removeItem(LOCAL_STORAGE_KEY);
-    if (leadInfo?.email) {
-      localStorage.removeItem(`skypearls_chat_history_${leadInfo.email}`);
+    if (leadInfo?.firstName) {
+      localStorage.removeItem(`skypearls_chat_history_${leadInfo.firstName}`);
     }
     setLeadInfo(null);
     setChatOpen(false);

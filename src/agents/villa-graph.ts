@@ -1,4 +1,5 @@
 import { StateGraph } from "@langchain/langgraph";
+import { BaseCheckpointSaver } from "@langchain/langgraph-checkpoint";
 import { StateAnnotation, GraphState } from "../lib/langgraph/state.js";
 import { retrieveDocuments } from "./nodes/retrieveDocuments.js";
 import { generateResponse } from "./nodes/generateResponse.js";
@@ -13,15 +14,20 @@ import { handleGreeting } from "./nodes/handleGreeting.js";
 
 type NodeNames = "__start__" | "__end__" | "retrieveDocuments" | "gradeDocuments" | "reformulateQuery" | "generateResponse" | "handleGreeting";
 
-export function createVillaGraph(config: any) {
+export function createVillaGraph(config: { checkpointer: BaseCheckpointSaver<number> }) {
   // Explicitly type the StateGraph with your node names
-  const graph = new StateGraph<typeof StateAnnotation.spec, GraphState, any, NodeNames>(StateAnnotation);
+  const graph = new StateGraph<typeof StateAnnotation.spec, GraphState, string, NodeNames>(StateAnnotation);
   
   // Add all the nodes to our graph
+  // @ts-expect-error - LangGraph node typing incompatibility with current library version
   graph.addNode("retrieveDocuments", retrieveDocuments);
+  // @ts-expect-error - LangGraph node typing incompatibility with current library version
   graph.addNode("gradeDocuments", gradeDocuments);
+  // @ts-expect-error - LangGraph node typing incompatibility with current library version
   graph.addNode("reformulateQuery", reformulateQuery);
+  // @ts-expect-error - LangGraph node typing incompatibility with current library version
   graph.addNode("generateResponse", generateResponse);
+  // @ts-expect-error - LangGraph node typing incompatibility with current library version
   graph.addNode("handleGreeting", handleGreeting);
   
   // Set the entry point using __start__
