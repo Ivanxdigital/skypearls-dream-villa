@@ -2,6 +2,13 @@ export interface Villa {
   id: string;
   name: string;
   priceRange: string;
+  priceOptions?: {
+    furnished: string;
+    unfurnished: string;
+  };
+  status: 'Available' | 'Under Construction' | 'Completed' | 'Coming Soon';
+  isNegotiable?: boolean;
+  constructionNote?: string;
   turnoverDate: string;
   lotArea: string;
   floorArea: string;
@@ -20,8 +27,15 @@ export const villas: Villa[] = [
   {
     id: "villa-anna",
     name: "Villa Anna",
-    priceRange: "₱23M",
-    turnoverDate: "June 2025",
+    priceRange: "₱18M - ₱23M",
+    priceOptions: {
+      furnished: "₱18M - ₱23M",
+      unfurnished: "₱17M - ₱20M"
+    },
+    status: "Under Construction",
+    isNegotiable: true,
+    constructionNote: "Expected completion July 2025",
+    turnoverDate: "July 2025",
     lotArea: "100 sqm",
     floorArea: "135 sqm",
     bedrooms: 2,
@@ -71,6 +85,7 @@ export const villas: Villa[] = [
     id: "villa-perles",
     name: "Villa Perles",
     priceRange: "₱28M–₱35M",
+    status: "Available",
     turnoverDate: "TBD",
     lotArea: "100 sqm",
     floorArea: "135 sqm",

@@ -45,7 +45,7 @@ export function LeadForm({ isOpen, onOpenChange, onSubmit }: LeadFormProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="dock-chat w-full max-w-full sm:max-w-[425px] md:max-w-[550px] max-h-[80vh] bg-skypearl-white border-skypearl-light shadow-xl z-[9999] animate-in fade-in data-[state=open]:duration-150"
+        className="dock-chat w-full max-w-full sm:max-w-[425px] md:max-w-[550px] max-h-[80vh] bg-skypearl-white border-skypearl-light shadow-xl z-50 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-4 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-4 duration-300 ease-out"
       >
         <DialogHeader>
           <DialogTitle className="text-skypearl-dark font-playfair">Welcome to Skypearls Villas</DialogTitle>

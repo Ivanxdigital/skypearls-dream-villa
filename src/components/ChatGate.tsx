@@ -82,7 +82,7 @@ export function ChatGate({ children }: ChatGateProps) {
       {/* Luxury FAB Container with Tooltip */}
       <div className="fixed bottom-4 right-4 md:bottom-6 md:right-10 z-50 group">
         {/* Tooltip - Hidden on mobile to avoid touch issues */}
-        <div className="absolute bottom-full right-0 mb-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-lg hidden md:block transform translate-y-1 group-hover:translate-y-0">
+        <div className="absolute bottom-full right-0 mb-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out pointer-events-none whitespace-nowrap shadow-lg hidden md:block transform translate-y-1 group-hover:translate-y-0">
           Chat with Skye
           {/* Tooltip Arrow */}
           <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
@@ -90,11 +90,11 @@ export function ChatGate({ children }: ChatGateProps) {
 
         <Button
           onClick={handleToggleFab}
-          className="relative h-16 w-16 rounded-full bg-skypearl shadow-md hover:shadow-lg overflow-hidden p-0 focus:outline-none focus:ring-2 focus:ring-skypearl/40 focus:ring-offset-1 transition-all duration-200 ease-out pointer-events-auto"
+          className="relative h-16 w-16 rounded-full bg-skypearl shadow-md hover:shadow-lg overflow-hidden p-0 focus:outline-none focus:ring-2 focus:ring-skypearl/40 focus:ring-offset-1 transition-all duration-300 ease-out pointer-events-auto"
           aria-label={chatOpen ? "Close chat" : "Open chat"}
         >
           {chatOpen ? (
-            <X className="h-6 w-6 text-white transition-all duration-200 ease-in-out" />
+            <X className="h-6 w-6 text-white transition-all duration-300 ease-out" />
           ) : (
             <>
               <img

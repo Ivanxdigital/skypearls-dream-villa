@@ -53,6 +53,11 @@ const scrollbarStyles = `
     animation: messageSlideIn 0.3s ease-out;
   }
 
+  /* Disable message animations when dialog is closing to prevent conflicts */
+  .dialog-content[data-state="closed"] .message-animation {
+    animation: none !important;
+  }
+
   @keyframes typingBounce {
     0%, 80%, 100% {
       transform: scale(0.8);
@@ -182,9 +187,12 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
   }, [leadInfo]);
 
   const handleInputFocus = () => {
-    setTimeout(() => {
-      inputFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 300);
+    // Only scroll into view if dialog is open to prevent conflicts during closing
+    if (isOpen) {
+      setTimeout(() => {
+        inputFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 300);
+    }
   };
 
   const handleEndChat = async () => {
@@ -284,14 +292,19 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
             dialog-content dock-chat w-full max-w-full
             sm:max-w-[380px] md:max-w-[450px] max-h-[70vh] 
             flex flex-col p-0 bg-skypearl-white border-skypearl-light shadow-xl z-50
-            animate-in fade-in data-[state=open]:duration-300 data-[state=open]:ease-out
-            data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:duration-300 data-[state=closed]:ease-in-out"
+            data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-4
+            data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-4
+            duration-300 ease-out"
           onPointerDownOutside={(e) => {
             // Allow FAB interaction by preventing default dialog close behavior
             const target = e.target as Element;
             if (target.closest('[aria-label*="chat"]') || target.closest('.group')) {
               e.preventDefault();
             }
+          }}
+          onEscapeKeyDown={(e) => {
+            // Prevent escape key from closing the dialog to maintain consistent close behavior
+            e.preventDefault();
           }}
         >
           <DialogHeader className="p-4 bg-white/80 backdrop-blur-sm flex flex-row justify-between items-center">
@@ -349,7 +362,7 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
                 <div className="relative max-w-[75%] min-w-[100px]">
                   {/* Timestamp - appears on hover */}
                   <div className={cn(
-                    "text-xs text-gray-500/70 mb-1 transition-all duration-200 opacity-0 group-hover:opacity-100 transform group-hover:translate-y-0 translate-y-2",
+                    "text-xs text-gray-500/70 mb-1 transition-all duration-300 ease-out opacity-0 group-hover:opacity-100 transform group-hover:translate-y-0 translate-y-2",
                     message.role === "user" ? "text-right pr-4" : "text-left pl-4"
                   )}>
                     {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
