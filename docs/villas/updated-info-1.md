@@ -7,8 +7,8 @@
 ## Property Details
 - Lot Area: 100 sqm
 - Floor Area: 140 sqm
-- Bedrooms: 2
-- Bathrooms: 2 indoor + 1 outdoor shower
+- Bedrooms: 2 (1 Studio Villa + Guest House by the pool)
+- Bathrooms: 2 (1 in the main villa & 1 in the guesthouse) indoor + 1 outdoor shower
 - Private swimming pool
 - Rooftop outdoor kitchen
 - 1-car garage
@@ -25,6 +25,12 @@
 
 ## Location
 - Esperanza, Del Carmen, Siargao Island, Philippines. Just across the road from the Sayak Airport runway.
+
+## Important Information
+- Currently in construction, estimated completion in July 2025.
+- Price is negotiable, the 23M is for the turnover price when fully developed, furnished, etc.
+- Available unfurnished which will lower the price significantly (17M - 20M) again this is negotiable. To negotiate they need to reach out to us on WhatsApp (+63 999 370 2550)
+- Available as a 1 bedroom which will also significantly reduce the price, as it was only recently we decided to include the guesthouse. But they need to contact us. This is only applicable while we haven't started the construction of the Guest House. Once we start, it comes as a 2 bedroom.
 
 ---
 

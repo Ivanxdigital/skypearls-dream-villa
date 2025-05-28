@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
+import { scrollToSection } from '@/hooks/use-smooth-scroll';
 import { 
   Bed, 
   Bath, 
@@ -190,10 +191,7 @@ const VillaDetailsCard: React.FC<VillaDetailsCardProps> = ({ villa, className })
   ];
 
   const handleRequestInfo = () => {
-    const contactSection = document.getElementById('contact');
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToSection('contact', 80);
   };
 
   return (
