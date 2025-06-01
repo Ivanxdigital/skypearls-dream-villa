@@ -6,13 +6,14 @@ import { generateResponse } from "./nodes/generateResponse.js";
 import { gradeDocuments } from "./nodes/gradeDocuments.js";
 import { reformulateQuery } from "./nodes/reformulateQuery.js";
 import { handleGreeting } from "./nodes/handleGreeting.js";
+import { handleBooking } from "./nodes/handleBooking.js";
 
 // Explicitly type all node names for StateGraph
 // This resolves TypeScript edge typing errors
 // __start__ and __end__ are always required
 // Add all your custom node names
 
-type NodeNames = "__start__" | "__end__" | "retrieveDocuments" | "gradeDocuments" | "reformulateQuery" | "generateResponse" | "handleGreeting";
+type NodeNames = "__start__" | "__end__" | "retrieveDocuments" | "gradeDocuments" | "reformulateQuery" | "generateResponse" | "handleGreeting" | "handleBooking";
 
 export function createVillaGraph(config: { checkpointer: BaseCheckpointSaver<number> }) {
   // Explicitly type the StateGraph with your node names
@@ -29,18 +30,29 @@ export function createVillaGraph(config: { checkpointer: BaseCheckpointSaver<num
   graph.addNode("generateResponse", generateResponse);
   // @ts-expect-error - LangGraph node typing incompatibility with current library version
   graph.addNode("handleGreeting", handleGreeting);
+  // @ts-expect-error - LangGraph node typing incompatibility with current library version
+  graph.addNode("handleBooking", handleBooking);
   
   // Set the entry point using __start__
   graph.addEdge("__start__", "retrieveDocuments");
   
-  // Add conditional edge based on document quality and greeting detection
+  // Add conditional edge based on document quality, greeting detection, and booking intent
   graph.addConditionalEdges(
     "gradeDocuments",
     (state: GraphState) => {
-      console.log("[villa-graph] Grading documents, quality:", state.documentQuality, "isGreeting:", state.isGreeting);
+      console.log("[villa-graph] Grading documents, quality:", state.documentQuality, "isGreeting:", state.isGreeting, "isBookingIntent:", state.isBookingIntent);
+      
+      // Check for greeting intent first
       if (state.isGreeting) {
         return "handleGreeting";
       }
+      
+      // Check for booking intent second
+      if (state.isBookingIntent) {
+        return "handleBooking";
+      }
+      
+      // Default document quality check
       if (state.documentQuality === undefined) {
         console.warn("[villa-graph] documentQuality is undefined, defaulting to reformulateQuery");
         return "reformulateQuery";
@@ -50,7 +62,8 @@ export function createVillaGraph(config: { checkpointer: BaseCheckpointSaver<num
     {
       generateResponse: "generateResponse",
       reformulateQuery: "reformulateQuery",
-      handleGreeting: "handleGreeting"
+      handleGreeting: "handleGreeting",
+      handleBooking: "handleBooking"
     }
   );
   
@@ -58,6 +71,7 @@ export function createVillaGraph(config: { checkpointer: BaseCheckpointSaver<num
   graph.addEdge("retrieveDocuments", "gradeDocuments");
   graph.addEdge("generateResponse", "__end__");
   graph.addEdge("handleGreeting", "__end__");
+  graph.addEdge("handleBooking", "__end__");
   
   // Compile the graph
   return graph.compile(config);

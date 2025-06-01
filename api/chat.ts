@@ -141,6 +141,8 @@ export default async function handler(req: any, res: any) {
       lastRetrieval: undefined,
       documentQuality: undefined,
       isGreeting: undefined,
+      isBookingIntent: undefined,
+      bookingInfo: undefined,
       leadInfo: safeLeadInfo,
     };
     // Run the graph with the initial state

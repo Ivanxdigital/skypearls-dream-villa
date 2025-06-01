@@ -23,6 +23,8 @@ export interface ChatState {
   lastRetrieval?: string;
   documentQuality?: number; // Added for the grading node
   isGreeting?: boolean; // Added for greeting detection
+  isBookingIntent?: boolean; // Added for booking intent detection
+  bookingInfo?: { eventTypeUrl?: string; eventTypeName?: string }; // Added for booking information
   leadInfo?: LeadInfo;
 }
 
@@ -49,6 +51,14 @@ export const StateAnnotation = Annotation.Root({
     default: () => undefined,
   }),
   isGreeting: Annotation<boolean | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  isBookingIntent: Annotation<boolean | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  bookingInfo: Annotation<{ eventTypeUrl?: string; eventTypeName?: string } | undefined>({
     value: (_, y) => y,
     default: () => undefined,
   }),

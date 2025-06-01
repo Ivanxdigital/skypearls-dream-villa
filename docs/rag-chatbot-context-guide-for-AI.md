@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-A full-stack RAG-based AI assistant combining a React/Tailwind frontend, a Node/Vercel backend, Pinecone for vector retrieval, OpenAI for LLM calls, and LangGraph/LangChain for orchestration. **Recently refactored** to use WhatsApp contact sharing instead of email-based lead capture for a simpler, more direct user experience.
+A full-stack RAG-based AI assistant combining a React/Tailwind frontend, a Node/Vercel backend, Pinecone for vector retrieval, OpenAI for LLM calls, and LangGraph/LangChain for orchestration. **Recently refactored** to use WhatsApp contact sharing instead of email-based lead capture for a simpler, more direct user experience. **Now includes Calendly booking integration** for seamless villa consultation scheduling.
 
 ---
 
@@ -18,8 +18,9 @@ A full-stack RAG-based AI assistant combining a React/Tailwind frontend, a Node/
 4. [Agents & Workflow](#agents--workflow)
 
    * [`villa-graph.ts`](#villa-graphts)
-   * Node details: retrieve, grade, reformulate, generate, greeting
+   * Node details: retrieve, grade, reformulate, generate, greeting, **booking**
    * [`retriever-tool.ts`](#retriever-toolts)
+   * [`calendly-tool.ts`](#calendly-toolts) 🆕
 5. [Frontend Components](#frontend-components)
 
    * [`ChatGate.tsx`](#chatgatetsx)
@@ -30,9 +31,10 @@ A full-stack RAG-based AI assistant combining a React/Tailwind frontend, a Node/
 8. [Docs Folder](#docs-folder)
 9. [Key Notes & Gotchas](#key-notes--gotchas)
 10. [Recent WhatsApp Refactor Changes](#recent-whatsapp-refactor-changes)
-11. [Extensibility & Refactoring Tips](#extensibility--refactoring-tips)
-12. [Environment & Deployment](#environment--deployment)
-13. [Future Improvements](#future-improvements)
+11. [Calendly Booking Integration](#calendly-booking-integration) 🆕
+12. [Extensibility & Refactoring Tips](#extensibility--refactoring-tips)
+13. [Environment & Deployment](#environment--deployment)
+14. [Future Improvements](#future-improvements)
 
 ---
 
@@ -41,9 +43,10 @@ A full-stack RAG-based AI assistant combining a React/Tailwind frontend, a Node/
 * **Frontend**: React + Tailwind + shadcn/ui. Core components live in `src/components/`.
 * **Backend**: Next.js API routes under `api/` deployed on Vercel.
 * **RAG Pipeline**: Orchestrated via LangGraph (`src/agents/villa-graph.ts`).
-* **Fallback Agent**: LangChain AgentExecutor (`api/chat-agent.ts`) with a custom retriever tool.
+* **Fallback Agent**: LangChain AgentExecutor (`api/chat-agent.ts`) with custom retriever and Calendly tools.
 * **Vector Store**: Pinecone accessed via `src/lib/vector-store.ts`.
 * **Contact Strategy**: **WhatsApp-first approach** - AI proactively shares +63 999 370 2550 for direct contact.
+* **Booking System**: **Calendly integration** for villa consultation scheduling with automatic intent detection.
 * **Email Notifications**: ~~Resend.com via `api/notify-lead.ts`~~ _(disabled in current flow)_.
 
 All chat state persists via thread IDs (`X-Thread-ID` header) and `localStorage` on the client.
@@ -52,13 +55,16 @@ All chat state persists via thread IDs (`X-Thread-ID` header) and `localStorage`
 
 ## Data Flow
 
-**🔄 Updated Flow (Post-WhatsApp Refactor):**
+**🔄 Updated Flow (Post-WhatsApp & Calendly Integration):**
 
 1. **User opens chat** → `ChatGate.tsx` checks `localStorage` for lead info.
 2. **Lead capture** (simplified) → `LeadForm.tsx` → ~~POST `/api/notify-lead`~~ _(removed)_.
 3. **ChatPanel** mounts → loads greeting & history from `localStorage`.
 4. **User message** → POST `/api/chat` with `{ messages, leadInfo }` + `X-Thread-ID`.
-5. **LangGraph** (or Agent) retrieves docs, grades, loops, and generates reply **with WhatsApp sharing**.
+5. **LangGraph** (or Agent) detects intent → retrieves docs, grades, and routes to appropriate handler:
+   - **Greeting** → `handleGreeting`
+   - **Booking intent** → `handleBooking` (Calendly integration)
+   - **Standard query** → RAG pipeline with optional booking suggestions
 6. **Response** → JSON `{ reply }` → `ChatPanel` displays and saves to `localStorage`.
 7. **Chat end** → ~~POST `/api/notify-lead`~~ _(no longer sends transcripts)_.
 
@@ -115,11 +121,12 @@ res.json({ reply: result.output });
 * Defines a LangGraph `StateGraph` with nodes:
 
   1. **retrieveDocuments**
-  2. **gradeDocuments**
+  2. **gradeDocuments** 🆕 _Now detects booking intent alongside greeting detection_
   3. **reformulateQuery** (if quality < threshold)
-  4. **generateResponse** 🆕 _Now includes WhatsApp sharing logic_
+  4. **generateResponse** 🆕 _Enhanced with WhatsApp sharing + booking suggestion logic_
   5. **handleGreeting** 🆕 _Enhanced with occasional WhatsApp mentions_
-* Branch logic based on `state.documentQuality` (0–1) and `state.isGreeting`.
+  6. **handleBooking** 🆕 _Calendly booking flow with personalized responses_
+* Branch logic based on `state.documentQuality` (0–1), `state.isGreeting`, and `state.isBookingIntent`.
 
 #### Workflow Diagram
 
@@ -127,8 +134,10 @@ res.json({ reply: result.output });
 __start__
   ↓
 retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __end__
-                             ↓                            ↓
-              (quality > 0.7) → generateResponse → __end__ (may include WhatsApp)
+                             ↓              ↓
+                      [isBookingIntent?] → handleBooking → __end__
+                             ↓
+              (quality > 0.7) → generateResponse → __end__ (may include WhatsApp + booking suggestions)
                              ↓
              (quality ≤ 0.7) → reformulateQuery ─┐
                                                   ↓
@@ -138,15 +147,23 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 #### Nodes
 
 * **retrieveDocuments** (`villa-graph.ts`): Pinecone similaritySearch(question, 4).
-* **gradeDocuments**: Detect greeting via regex, else LLM rates relevance (0–1).
+* **gradeDocuments**: **Enhanced greeting detection** (flexible patterns for "Hello how are you?", "Hi there", etc.) + **precise booking intent** detection via action-context patterns, else LLM rates relevance (0–1). **Booking requires action context** - not just keywords alone to avoid false positives on informational queries.
 * **reformulateQuery**: LLM rewrites question for better retrieval.
-* **generateResponse** 🆕: LLM crafts answer using top docs as context; **automatically includes WhatsApp (+63 999 370 2550) when users show interest** (pricing, contact, viewing, purchase intent, etc.).
+* **generateResponse** 🆕: LLM crafts answer using top docs as context; **automatically includes WhatsApp (+63 999 370 2550) and booking suggestions** when users show serious interest (pricing, investment, viewing, detailed info).
 * **handleGreeting** 🆕: Random greetings personalized by `leadInfo.firstName`; 30% chance to include WhatsApp mention.
+* **handleBooking** 🆕: Fetches Calendly villa consultation event type, generates personalized booking response with scheduling link, graceful WhatsApp fallback if Calendly unavailable.
 
 ### `src/agents/retriever-tool.ts`
 
 * LangChain `StructuredTool` wrapping Pinecone search.
 * `_call(question)`: runs `vectorStore.similaritySearch(…,4)` and concatenates `pageContent`.
+
+### `src/agents/tools/calendly-tool.ts` 🆕
+
+* LangChain `StructuredTool` for Calendly booking functionality.
+* Detects booking intent keywords and returns formatted scheduling information.
+* Integrates with `src/lib/calendly-client.ts` for API interactions.
+* Used by fallback agent when `NEXT_PUBLIC_AGENT_MODE="on"`.
 
 ---
 
@@ -207,6 +224,7 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 * **Pinecone**: vector store for retrieval (via `OpenAIEmbeddings`).
 * **LangGraph**: custom RAG orchestration.
 * **LangChain**: agent executor & tools.
+* **Calendly V2 API**: villa consultation booking integration.
 * **WhatsApp**: Direct contact via +63 999 370 2550 _(shared by AI)_.
 * ~~**Resend.com**: transactional emails~~ _(not used in current flow)_.
 * **React/Tailwind/Shadcn UI**: frontend styling & components.
@@ -217,19 +235,23 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 
 * **`docs/rag-chatbot.md`**: up-to-date flow diagram & summary.
 * **`docs/refactor_plan_RAG_lead.md`**: WhatsApp refactor plan and implementation guide.
+* **`docs/calendly-integration-plan.md`**: Calendly implementation plan and API documentation.
+* **`calendly-integration-task-manager.md`**: Phase-by-phase implementation tracker (7/8 complete).
 * Other PRDs (`langgraph-migration-prd.md`, etc.) are **outdated** but provide design rationale.
 
 ---
 
 ## Key Notes & Gotchas
 
-* **Env vars**: `OPENAI_API_KEY`, `PINECONE_API_KEY`, `PINECONE_INDEX`, ~~`RESEND_API_KEY`, `LEAD_EMAIL_TO`~~ _(legacy)_.
+* **Env vars**: `OPENAI_API_KEY`, `PINECONE_API_KEY`, `PINECONE_INDEX`, `CALENDLY_PERSONAL_ACCESS_TOKEN`, ~~`RESEND_API_KEY`, `LEAD_EMAIL_TO`~~ _(legacy)_.
 * **Agent flag**: `NEXT_PUBLIC_AGENT_MODE` toggles between LangGraph & LangChain agent.
 * **Storage keys**: `skypearls_lead`, `skypearls_chat_history_<firstName>` _(changed from email)_.
 * **Streaming**: none; calls await full response.
 * **Error handling**: 500s return generic error; consider retry logic.
 * **Checkpointer**: LangGraph uses file-based storage by thread ID; ensure write access or swap to DB.
 * **WhatsApp Number**: +63 999 370 2550 _(hardcoded in agent responses)_.
+* **Calendly**: Uses villa consultation event type with graceful WhatsApp fallback on API failures.
+* **Greeting Detection**: Enhanced patterns support natural conversations like "Hello how are you?" - uses word boundaries instead of exact matches to avoid RAG pipeline for basic greetings.
 
 ---
 
@@ -268,6 +290,61 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 - Reduced technical dependencies (no email service issues)
 - More natural conversation flow with proactive contact sharing
 
+### 🔧 **Greeting Detection Fix (December 2024)**
+**Issue**: Basic greetings like "Hello how are you?" weren't detected, causing RAG search + false booking intent.
+
+**Solution**: Enhanced `gradeDocuments.ts` greeting patterns:
+- **Before**: `/^hello$/i` (exact match only)
+- **After**: `/^hello\b/i` + combination patterns like `/^hello\s+how\s+are\s+you/i`
+- **Result**: Natural greetings now route to `handleGreeting` instead of triggering villa search pipeline.
+
+---
+
+## Calendly Booking Integration
+
+### 🆕 **Booking System (December 2024)**
+
+**Status**: 7/8 phases complete - fully functional with comprehensive intent detection
+
+#### **Key Components**
+- **`src/lib/calendly-client.ts`**: Calendly V2 API client with functions for user info, event types, and scheduling URLs
+- **`src/agents/tools/calendly-tool.ts`**: LangGraph tool for booking intent detection and URL generation
+- **`src/agents/nodes/handleBooking.ts`**: Dedicated booking response handler with personalization
+- **State management**: Added `isBookingIntent` and `bookingInfo` to ChatState interface
+
+#### **Intent Detection**
+- **Keywords**: schedule, book, meeting, call, consultation, tour, viewing, appointment, calendar, available, time
+- **Triggers**: Automatic detection in `gradeDocuments.ts` alongside existing greeting detection
+- **Priority**: Booking intent takes precedence after greeting detection in workflow
+
+#### **Booking Flow**
+1. **Intent detected** → Routes to `handleBooking` node
+2. **Calendly API** → Fetches villa consultation event type
+3. **Personalized response** → Uses `leadInfo.firstName` for customization
+4. **Fallback strategy** → WhatsApp contact if Calendly API unavailable
+5. **State tracking** → Stores `bookingInfo` with event URL and name
+
+#### **Response Enhancement**
+- **Automatic suggestions**: When users show serious interest (pricing, investment, viewing)
+- **Natural integration**: Booking suggestions appear contextually, not pushy
+- **Dual options**: Always provides both Calendly link and WhatsApp fallback
+
+#### **Error Handling**
+- **API failures**: Graceful fallback to WhatsApp contact
+- **Token issues**: Clear error messages with alternative contact methods
+- **Network problems**: Always maintains communication path via WhatsApp
+
+#### **Environment Configuration**
+```bash
+CALENDLY_PERSONAL_ACCESS_TOKEN=your_token_here
+```
+
+#### **Testing Strategy**
+- Booking intent detection accuracy > 90%
+- Comprehensive test coverage for booking flow
+- Manual testing with various booking phrases
+- Error scenario validation
+
 ---
 
 ## Extensibility & Refactoring Tips
@@ -279,6 +356,8 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 * Replace file-based checkpointer with Redis/Mongo for horizontal scaling.
 * Add analytics middleware to log query/timing data.
 * **WhatsApp Integration**: Consider WhatsApp Business API for automated responses.
+* **Calendly Enhancement**: Add webhook integration for real-time booking notifications.
+* **Booking Analytics**: Track conversion rates from chat to scheduled meetings.
 
 ---
 
@@ -287,6 +366,7 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 * **Local**: `.env.local` for dev; uses file-based checkpointer.
 * **Prod**: Vercel; env vars set in project settings.
 * **Pinecone**: ensure network access from Vercel.
+* **Calendly**: Personal Access Token required for API access.
 * ~~**Resend**: verify sender domain~~ _(not required for current flow)_.
 
 ---
@@ -297,10 +377,12 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 * Client-side caching for repeated queries.
 * Multi-language support for chatbot.
 * WhatsApp Business API integration for seamless handoff.
-* Integration with booking/calendar tools via new LangChain tools.
+* **Calendly webhook integration** for booking confirmations and notifications.
+* **Calendar availability display** within chat interface.
+* **CRM integration** for booking and lead management sync.
 * UI refresh: add typing indicators, quick-reply buttons.
-* Analytics tracking for WhatsApp conversion rates.
+* Analytics tracking for WhatsApp and Calendly conversion rates.
 
 ---
 
-*Generated for AI coding agents — include this doc in your prompt to enable high-context refactoring, debugging, or feature development. Last updated: December 2024 (WhatsApp Refactor).*
+*Generated for AI coding agents — include this doc in your prompt to enable high-context refactoring, debugging, or feature development. Last updated: December 2024 (WhatsApp Refactor + Calendly Integration).*

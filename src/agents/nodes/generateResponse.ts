@@ -1,5 +1,6 @@
 import { ChatState } from "../../lib/langgraph/state.js";
 import { ChatOpenAI } from "@langchain/openai";
+import { getVillaConsultationEventType } from "../../lib/calendly-client.js";
 
 function extractStringContent(content: unknown): string {
   if (typeof content === "string") return content;
@@ -24,9 +25,25 @@ const WHATSAPP_TRIGGERS = [
   'availability', 'book', 'reserve', 'when can', 'meeting'
 ];
 
+// Enhanced booking suggestion triggers (subset of WhatsApp triggers that indicate consultation readiness)
+const BOOKING_SUGGESTION_TRIGGERS = [
+  'price', 'pricing', 'cost', 'how much', 'budget', 'afford',
+  'invest', 'investment', 'roi', 'returns',
+  'serious about', 'interested in buying', 'ready to buy',
+  'more information', 'details', 'specifics', 'brochure',
+  'schedule', 'visit', 'viewing', 'tour', 'see the villa',
+  'when can', 'availability', 'available',
+  'consultation', 'consult', 'discuss', 'talk about'
+];
+
 function shouldShareWhatsApp(question: string): boolean {
   const lowerQuestion = question.toLowerCase();
   return WHATSAPP_TRIGGERS.some(trigger => lowerQuestion.includes(trigger));
+}
+
+function shouldSuggestBooking(question: string): boolean {
+  const lowerQuestion = question.toLowerCase();
+  return BOOKING_SUGGESTION_TRIGGERS.some(trigger => lowerQuestion.includes(trigger));
 }
 
 function getWhatsAppMessage(leadInfo: { firstName?: string } | undefined): string {
@@ -34,6 +51,22 @@ function getWhatsAppMessage(leadInfo: { firstName?: string } | undefined): strin
   const personalGreeting = firstName ? `${firstName}, ` : '';
   
   return `\n\n💬 **For detailed information, pricing, and villa viewings, please contact us directly on WhatsApp at +63 999 370 2550.** Our team can provide personalized assistance and answer all your questions about Skypearls Villas!`;
+}
+
+async function getBookingSuggestion(leadInfo: { firstName?: string } | undefined): Promise<string> {
+  try {
+    // Try to get the villa consultation event type
+    const eventType = await getVillaConsultationEventType();
+    
+    if (eventType?.scheduling_url) {
+      return `\n\n📅 **Ready to see the villas in person?** I'd be happy to schedule a villa viewing where you can explore the properties, see the luxury features, and discuss your specific needs: ${eventType.scheduling_url}`;
+    }
+  } catch (error) {
+    console.warn('[generateResponse] Could not fetch booking link for suggestion:', error);
+  }
+  
+  // Fallback to WhatsApp if Calendly is unavailable
+  return `\n\n📅 **Ready to see the villas in person?** I'd be happy to schedule a villa viewing where you can explore the properties, see the luxury features, and discuss your specific needs. Please reach out on WhatsApp at +63 999 370 2550 to schedule.`;
 }
 
 export async function generateResponse(state: ChatState) {
@@ -44,26 +77,31 @@ export async function generateResponse(state: ChatState) {
   // Check if this is an ongoing conversation (has previous assistant messages)
   const isOngoingConversation = messages.some(msg => msg.role === "assistant");
   
+  // Check for WhatsApp and booking suggestions
+  const includeWhatsApp = shouldShareWhatsApp(question);
+  const includeBookingSuggestion = shouldSuggestBooking(question);
+  
   if (!documents || documents.length === 0) {
     console.warn("[generateResponse] No documents available for response generation.");
     
-    const whatsappInfo = shouldShareWhatsApp(question) ? getWhatsAppMessage(leadInfo) : '';
+    const whatsappInfo = includeWhatsApp ? getWhatsAppMessage(leadInfo) : '';
+    const bookingSuggestion = includeBookingSuggestion && !includeWhatsApp ? await getBookingSuggestion(leadInfo) : '';
     
     const fallbackMessage = isOngoingConversation 
       ? (leadInfo 
         ? `I'm having trouble pulling up specific details right now, but I'd love to help you with Skypearls Villas. 
 
-We have luxury villas in Siargao that are perfect for both personal use and investment. What specific information were you looking for? I can get you the details you need.${whatsappInfo}`
+We have luxury villas in Siargao that are perfect for both personal use and investment. What specific information were you looking for? I can get you the details you need.${whatsappInfo}${bookingSuggestion}`
         : `I'm having a small technical issue, but I'm here to help with Skypearls Villas. 
 
-We have beautiful luxury villas in Siargao for both personal use and investment. What would you like to know? I can get you the right information.${whatsappInfo}`)
+We have beautiful luxury villas in Siargao for both personal use and investment. What would you like to know? I can get you the right information.${whatsappInfo}${bookingSuggestion}`)
       : (leadInfo 
         ? `Hi ${leadInfo.firstName}! I'm having trouble pulling up specific details right now, but I'd love to help you with Skypearls Villas. 
 
-We have luxury villas in Siargao that are perfect for both personal use and investment. What specific information were you looking for? I can get you the details you need.${whatsappInfo}`
+We have luxury villas in Siargao that are perfect for both personal use and investment. What specific information were you looking for? I can get you the details you need.${whatsappInfo}${bookingSuggestion}`
         : `Hi there! I'm having a small technical issue, but I'm here to help with Skypearls Villas. 
 
-We have beautiful luxury villas in Siargao for both personal use and investment. What would you like to know? I can get you the right information.${whatsappInfo}`);
+We have beautiful luxury villas in Siargao for both personal use and investment. What would you like to know? I can get you the right information.${whatsappInfo}${bookingSuggestion}`);
 
     return {
       messages: [...state.messages, {
@@ -82,13 +120,16 @@ We have beautiful luxury villas in Siargao for both personal use and investment.
   // Format the docs for the prompt
   const formattedDocs = documents?.map(doc => doc.pageContent).join("\n\n") || "";
   
-  // Check if we should include WhatsApp contact info
-  const includeWhatsApp = shouldShareWhatsApp(question);
+  // Enhanced instructions for WhatsApp and booking suggestions
   const whatsappInstruction = includeWhatsApp ? `
 
 IMPORTANT: Since the user is asking about ${question.toLowerCase().includes('price') || question.toLowerCase().includes('cost') ? 'pricing' : question.toLowerCase().includes('contact') || question.toLowerCase().includes('call') ? 'contact' : question.toLowerCase().includes('visit') || question.toLowerCase().includes('tour') ? 'viewing' : 'detailed information'}, you MUST include our WhatsApp contact information at the end of your response:
 
 "For detailed information, pricing, and villa viewings, please contact us directly on WhatsApp at +63 999 370 2550. Our team can provide personalized assistance and answer all your questions about Skypearls Villas!"` : '';
+
+  const bookingInstruction = includeBookingSuggestion && !includeWhatsApp ? `
+
+BOOKING SUGGESTION: Since the user is showing serious interest in ${question.toLowerCase().includes('price') || question.toLowerCase().includes('cost') ? 'pricing details' : question.toLowerCase().includes('invest') ? 'investment opportunities' : question.toLowerCase().includes('visit') || question.toLowerCase().includes('tour') ? 'villa viewings' : 'villa information'}, naturally suggest a villa viewing. Mention that we can schedule a personalized villa viewing where they can see the properties in person and discuss their specific needs.` : '';
   
   // Create a friendly, concise sales-focused prompt
   const conversationContext = isOngoingConversation 
@@ -116,8 +157,11 @@ APPROACH:
 - Ask ONE focused question to keep conversation going
 - Use their name naturally but not excessively
 
-CONTACT SHARING:
-Our WhatsApp number is +63 999 370 2550. Share this when users show genuine interest, ask about pricing, want to schedule viewings, or need detailed information.${whatsappInstruction}
+CONTACT & BOOKING STRATEGY:
+Our WhatsApp number is +63 999 370 2550. Share this when users show genuine interest, ask about pricing, want to schedule viewings, or need detailed information.
+
+VILLA VIEWING SUGGESTIONS:
+When users show serious interest (pricing, investment, viewing requests), naturally suggest we can schedule a villa viewing where they can see the properties in person and discuss their specific needs. Keep it natural and helpful, not pushy.${whatsappInstruction}${bookingInstruction}
 
 Context: ${formattedDocs}
 
@@ -142,8 +186,11 @@ APPROACH:
 - Suggest contact for serious inquiries
 - Ask one focused question
 
-CONTACT SHARING:
-Our WhatsApp number is +63 999 370 2550. Share this when users show genuine interest, ask about pricing, want to schedule viewings, or need detailed information.${whatsappInstruction}
+CONTACT & BOOKING STRATEGY:
+Our WhatsApp number is +63 999 370 2550. Share this when users show genuine interest, ask about pricing, want to schedule viewings, or need detailed information.
+
+VILLA VIEWING SUGGESTIONS:
+When users show serious interest (pricing, investment, viewing requests), naturally suggest we can schedule a villa viewing where they can see the properties in person and discuss their specific needs. Keep it natural and helpful, not pushy.${whatsappInstruction}${bookingInstruction}
 
 Context: ${formattedDocs}
 
@@ -163,6 +210,12 @@ Keep it friendly, informative, and concise.`;
       answer += getWhatsAppMessage(leadInfo);
     }
     
+    // Add booking suggestion if needed and WhatsApp not already included
+    if (includeBookingSuggestion && !includeWhatsApp && !answer.toLowerCase().includes('viewing') && !answer.toLowerCase().includes('schedule')) {
+      const bookingSuggestion = await getBookingSuggestion(leadInfo);
+      answer += bookingSuggestion;
+    }
+    
     console.log("[generateResponse] Generated response:", answer.slice(0, 100) + "...");
     
     // Return the response as a new message to add to the conversation
@@ -175,24 +228,25 @@ Keep it friendly, informative, and concise.`;
   } catch (error) {
     console.error("[generateResponse] Error generating response:", error);
     
-    const whatsappInfo = shouldShareWhatsApp(question) ? getWhatsAppMessage(leadInfo) : '';
+    const whatsappInfo = includeWhatsApp ? getWhatsAppMessage(leadInfo) : '';
+    const bookingSuggestion = includeBookingSuggestion && !includeWhatsApp ? await getBookingSuggestion(leadInfo) : '';
     
     // Simplified fallback with friendly tone
     const errorFallback = isOngoingConversation
       ? (leadInfo
         ? `I'm having a technical issue right now, but I'm still here to help with Skypearls Villas! 
 
-Could you try asking again? Or if you'd prefer, I can have someone call you directly to discuss our available villas.${whatsappInfo}`
+Could you try asking again? Or if you'd prefer, I can have someone call you directly to discuss our available villas.${whatsappInfo}${bookingSuggestion}`
         : `Sorry about that - I'm having a small technical issue. I'm still here to help with Skypearls Villas though!
 
-Could you try your question again? Or feel free to share your contact info and I'll have someone reach out with details about our villas.${whatsappInfo}`)
+Could you try your question again? Or feel free to share your contact info and I'll have someone reach out with details about our villas.${whatsappInfo}${bookingSuggestion}`)
       : (leadInfo
         ? `Hi ${leadInfo.firstName}, I'm having a technical issue right now, but I'm still here to help with Skypearls Villas! 
 
-Could you try asking again? Or if you'd prefer, I can have someone call you directly to discuss our available villas.${whatsappInfo}`
+Could you try asking again? Or if you'd prefer, I can have someone call you directly to discuss our available villas.${whatsappInfo}${bookingSuggestion}`
         : `Sorry about that - I'm having a small technical issue. I'm still here to help with Skypearls Villas though!
 
-Could you try your question again? Or feel free to share your contact info and I'll have someone reach out with details about our villas.${whatsappInfo}`);
+Could you try your question again? Or feel free to share your contact info and I'll have someone reach out with details about our villas.${whatsappInfo}${bookingSuggestion}`);
 
     return {
       messages: [...state.messages, {
