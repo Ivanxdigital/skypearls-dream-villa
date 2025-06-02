@@ -83,7 +83,7 @@ const AmenitiesSection = () => {
           
           <div ref={imageReveal.ref} className="relative opacity-0">
             <img 
-              src="/pool.png" 
+              src="/images/amenities/pool.png" 
               alt="Private infinity pool with flamingo float at Skypearls Villa" 
               className="w-full h-full object-cover rounded-lg shadow-lg"
             />
