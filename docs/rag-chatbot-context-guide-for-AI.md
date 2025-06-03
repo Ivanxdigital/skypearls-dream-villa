@@ -246,7 +246,7 @@ retrieveDocuments → gradeDocuments → [isGreeting?] → handleGreeting → __
 * **Env vars**: `OPENAI_API_KEY`, `PINECONE_API_KEY`, `PINECONE_INDEX`, `CALENDLY_PERSONAL_ACCESS_TOKEN`, ~~`RESEND_API_KEY`, `LEAD_EMAIL_TO`~~ _(legacy)_.
 * **Agent flag**: `NEXT_PUBLIC_AGENT_MODE` toggles between LangGraph & LangChain agent.
 * **Storage keys**: `skypearls_lead`, `skypearls_chat_history_<firstName>` _(changed from email)_.
-* **Streaming**: none; calls await full response.
+* **Streaming**: ✅ **IMPLEMENTED** - Real-time token-by-token responses via SSE (Jan 2025).
 * **Error handling**: 500s return generic error; consider retry logic.
 * **Checkpointer**: LangGraph uses file-based storage by thread ID; ensure write access or swap to DB.
 * **WhatsApp Number**: +63 999 370 2550 _(hardcoded in agent responses)_.
@@ -371,9 +371,50 @@ CALENDLY_PERSONAL_ACCESS_TOKEN=your_token_here
 
 ---
 
+## Streaming Chat Implementation
+
+### 🆕 **Real-Time Streaming (January 2025)** ✅ COMPLETED
+
+**Status**: Fully functional SSE-based streaming with token-by-token delivery
+
+#### **Key Fixes Applied**
+- **TypeScript Compilation**: Fixed missing streaming properties in `GraphState` initialization
+- **Request Validation**: Updated Zod schema to handle optional email/phone fields: `z.union([z.string().email(), z.literal("")])`
+- **Node Streaming**: Added streaming support to `handleGreeting` and `handleBooking` nodes
+- **Thread ID**: Updated generation to use firstName instead of email for consistency
+
+#### **Files Modified**
+- **`api/chat-stream.ts`**: Main streaming endpoint with SSE implementation
+- **`src/agents/nodes/handleGreeting.ts`**: Word-by-word streaming with 50ms delays
+- **`src/agents/nodes/handleBooking.ts`**: Streaming for both Calendly and WhatsApp responses
+
+#### **Technical Implementation**
+```typescript
+// SSE streaming with proper validation
+email: z.union([z.string().email(), z.literal("")]).optional()
+
+// Streaming properties in GraphState
+streaming: { enabled: true, onToken: (token, messageId) => sendSSEEvent(...) }
+
+// Word-by-word token emission in nodes
+for (const word of words) {
+  effectiveStreaming.onToken(word + ' ', messageId);
+  await new Promise(resolve => setTimeout(resolve, 50));
+}
+```
+
+#### **Current Behavior**
+- ✅ Greeting responses stream naturally word-by-word
+- ✅ Booking responses stream with Calendly links and directions
+- ✅ RAG responses stream via LLM callbacks (generateResponse node)
+- ✅ Proper error handling with fallback to non-streaming mode
+- ✅ Frontend displays typing indicators during streaming
+
+---
+
 ## Future Improvements
 
-* Streaming chat with partial tokens.
+* ~~Streaming chat with partial tokens~~ ✅ **COMPLETED (Jan 2025)**
 * Client-side caching for repeated queries.
 * Multi-language support for chatbot.
 * WhatsApp Business API integration for seamless handoff.
@@ -385,4 +426,4 @@ CALENDLY_PERSONAL_ACCESS_TOKEN=your_token_here
 
 ---
 
-*Generated for AI coding agents — include this doc in your prompt to enable high-context refactoring, debugging, or feature development. Last updated: December 2024 (WhatsApp Refactor + Calendly Integration).*
+*Generated for AI coding agents — include this doc in your prompt to enable high-context refactoring, debugging, or feature development. Last updated: January 2025 (Streaming Chat Implementation + WhatsApp Refactor + Calendly Integration).*

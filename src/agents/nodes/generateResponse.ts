@@ -1,4 +1,4 @@
-import { ChatState } from "../../lib/langgraph/state.js";
+import { ChatState, StreamingConfig } from "../../lib/langgraph/state.js";
 import { ChatOpenAI } from "@langchain/openai";
 import { getVillaConsultationEventType } from "../../lib/calendly-client.js";
 
@@ -70,9 +70,10 @@ async function getBookingSuggestion(leadInfo: { firstName?: string } | undefined
 }
 
 export async function generateResponse(state: ChatState) {
-  const { question, documents, leadInfo, messages } = state;
+  const { question, documents, leadInfo, messages, streaming } = state;
   
   console.log("[generateResponse] Generating response for question:", question);
+  console.log("[generateResponse] Streaming enabled:", streaming?.enabled);
   
   // Check if this is an ongoing conversation (has previous assistant messages)
   const isOngoingConversation = messages.some(msg => msg.role === "assistant");
@@ -103,6 +104,16 @@ We have luxury villas in Siargao that are perfect for both personal use and inve
 
 We have beautiful luxury villas in Siargao for both personal use and investment. What would you like to know? I can get you the right information.${whatsappInfo}${bookingSuggestion}`);
 
+    // If streaming is enabled, stream the fallback message
+    if (streaming?.enabled && streaming.onToken) {
+      const words = fallbackMessage.split(' ');
+      for (const word of words) {
+        streaming.onToken(word + ' ', streaming.messageId);
+        // Add a small delay to simulate natural typing
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+    }
+
     return {
       messages: [...state.messages, {
         role: "assistant",
@@ -111,10 +122,24 @@ We have beautiful luxury villas in Siargao for both personal use and investment.
     };
   }
   
-  // Initialize LLM for response generation
+  // Get streaming config from global context if not in state
+  const globalStreamingConfig = (globalThis as any)._streamingConfig as StreamingConfig | undefined;
+  const effectiveStreaming = streaming || globalStreamingConfig;
+  
+  // Initialize LLM for response generation with streaming support
   const llm = new ChatOpenAI({
     model: process.env.OPENAI_MODEL || "gpt-4o-mini",
     temperature: 0.4,
+    streaming: effectiveStreaming?.enabled || false,
+    callbacks: effectiveStreaming?.enabled && effectiveStreaming.onToken ? [
+      {
+        handleLLMNewToken: async (token: string) => {
+          if (effectiveStreaming.onToken) {
+            effectiveStreaming.onToken(token, effectiveStreaming.messageId);
+          }
+        },
+      }
+    ] : undefined,
   });
   
   // Format the docs for the prompt
@@ -199,7 +224,9 @@ Question: ${question}
 Keep it friendly, informative, and concise.`;
   
   try {
-    // Generate the response
+    console.log("[generateResponse] Using streaming mode:", effectiveStreaming?.enabled);
+    
+    // Generate the response (will stream if callbacks are set)
     const response = await llm.invoke([
       { role: "user", content: promptTemplate }
     ]);
@@ -207,13 +234,32 @@ Keep it friendly, informative, and concise.`;
     
     // Ensure WhatsApp info is included if needed and not already present
     if (includeWhatsApp && !answer.includes('+63 999 370 2550')) {
-      answer += getWhatsAppMessage(leadInfo);
+      const whatsappInfo = getWhatsAppMessage(leadInfo);
+      answer += whatsappInfo;
+      
+      // Stream the WhatsApp info if streaming is enabled
+      if (effectiveStreaming?.enabled && effectiveStreaming.onToken) {
+        const words = whatsappInfo.split(' ');
+        for (const word of words) {
+          effectiveStreaming.onToken(word + ' ', effectiveStreaming.messageId);
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      }
     }
     
     // Add booking suggestion if needed and WhatsApp not already included
     if (includeBookingSuggestion && !includeWhatsApp && !answer.toLowerCase().includes('viewing') && !answer.toLowerCase().includes('schedule')) {
       const bookingSuggestion = await getBookingSuggestion(leadInfo);
       answer += bookingSuggestion;
+      
+      // Stream the booking suggestion if streaming is enabled
+      if (effectiveStreaming?.enabled && effectiveStreaming.onToken) {
+        const words = bookingSuggestion.split(' ');
+        for (const word of words) {
+          effectiveStreaming.onToken(word + ' ', effectiveStreaming.messageId);
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      }
     }
     
     console.log("[generateResponse] Generated response:", answer.slice(0, 100) + "...");
@@ -247,6 +293,15 @@ Could you try asking again? Or if you'd prefer, I can have someone call you dire
         : `Sorry about that - I'm having a small technical issue. I'm still here to help with Skypearls Villas though!
 
 Could you try your question again? Or feel free to share your contact info and I'll have someone reach out with details about our villas.${whatsappInfo}${bookingSuggestion}`);
+
+    // Stream the error fallback if streaming is enabled
+    if (effectiveStreaming?.enabled && effectiveStreaming.onToken) {
+      const words = errorFallback.split(' ');
+      for (const word of words) {
+        effectiveStreaming.onToken(word + ' ', effectiveStreaming.messageId);
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+    }
 
     return {
       messages: [...state.messages, {

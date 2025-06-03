@@ -144,13 +144,31 @@ export default async function handler(req: any, res: any) {
       isBookingIntent: undefined,
       bookingInfo: undefined,
       leadInfo: safeLeadInfo,
+      imageUrls: undefined,
+      imageContext: undefined,
+      imageType: undefined,
+      showImages: undefined,
+      // Streaming properties (disabled for non-streaming endpoint)
+      streaming: undefined,
+      streamBuffer: undefined,
+      currentMessageId: undefined,
     };
     // Run the graph with the initial state
     const result = await graph.invoke(initialState, { configurable: { thread_id: threadId } }) as GraphState;
     // Extract the final response from the result
     const response = result.messages[result.messages.length - 1];
+    
+    // Prepare response data with optional image information
+    const responseData: any = { reply: response.content };
+    
+    if (result.imageUrls && result.imageUrls.length > 0) {
+      responseData.images = result.imageUrls;
+      responseData.imageType = result.imageType;
+      responseData.imageContext = result.imageContext;
+    }
+    
     // Return the response
-    res.status(200).json({ reply: response.content });
+    res.status(200).json(responseData);
   } catch (err) {
     console.error('[CHAT API] Error:', err);
     res.status(500).json({ error: 'Internal server error' });

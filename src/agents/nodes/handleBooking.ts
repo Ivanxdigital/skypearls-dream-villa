@@ -11,17 +11,18 @@ import {
  * or falling back to WhatsApp contact if Calendly is unavailable
  */
 export async function handleBooking(state: ChatState) {
-  const { question, leadInfo } = state;
+  const { question, leadInfo, streaming } = state;
   const userName = leadInfo?.firstName;
   
   console.log("[handleBooking] Handling booking request for question:", question);
+  console.log("[handleBooking] Streaming enabled:", streaming?.enabled);
 
   try {
     // Check Calendly API health first
     const health = await checkCalendlyHealth();
     if (!health.healthy) {
       console.warn('[handleBooking] API unhealthy, falling back to WhatsApp');
-      return generateWhatsAppFallbackResponse(userName);
+      return await generateWhatsAppFallbackResponse(userName, state);
     }
 
     // Get the villa consultation event type
@@ -29,7 +30,7 @@ export async function handleBooking(state: ChatState) {
     
     if (!eventType) {
       console.warn('[handleBooking] No suitable event type found, falling back to WhatsApp');
-      return generateWhatsAppFallbackResponse(userName);
+      return await generateWhatsAppFallbackResponse(userName, state);
     }
 
     // Generate personalized booking response with Calendly link
@@ -37,8 +38,27 @@ export async function handleBooking(state: ChatState) {
     
     console.log("[handleBooking] Generated booking response with Calendly link");
 
+    // Check if streaming is enabled and handle accordingly
+    const globalStreamingConfig = (globalThis as any)._streamingConfig;
+    const effectiveStreaming = streaming || globalStreamingConfig;
+    
+    if (effectiveStreaming?.enabled && effectiveStreaming.onToken) {
+      console.log("[handleBooking] Streaming booking response");
+      // Stream the response word by word
+      const words = responseContent.split(' ');
+      for (let i = 0; i < words.length; i++) {
+        const token = i === words.length - 1 ? words[i] : words[i] + ' ';
+        effectiveStreaming.onToken(token, effectiveStreaming.messageId);
+        // Add a small delay to simulate natural typing
+        await new Promise(resolve => setTimeout(resolve, 30));
+      }
+    }
+
     return {
-      messages: [new AIMessage({ content: responseContent })],
+      messages: [...state.messages, {
+        role: "assistant",
+        content: responseContent
+      }],
       bookingInfo: {
         eventTypeUrl: eventType.scheduling_url,
         eventTypeName: eventType.name
@@ -46,7 +66,7 @@ export async function handleBooking(state: ChatState) {
     };
   } catch (error) {
     console.error('[handleBooking] Error generating booking response:', error);
-    return generateWhatsAppFallbackResponse(userName);
+    return await generateWhatsAppFallbackResponse(userName, state);
   }
 }
 
@@ -84,7 +104,7 @@ Looking forward to showing you our beautiful villas! 🌟`;
 /**
  * Generate WhatsApp fallback response when Calendly is unavailable
  */
-function generateWhatsAppFallbackResponse(userName?: string) {
+async function generateWhatsAppFallbackResponse(userName?: string, state?: ChatState) {
   const greeting = userName ? `Hi ${userName}! ` : "";
   
   const responseContent = `${greeting}I'd love to help you schedule a villa viewing! 🏖️
@@ -104,7 +124,28 @@ Our property is located past the airport. Keep going straight and you'll see the
 
 We typically respond within minutes during business hours. Looking forward to showing you our beautiful villas! 🌟`;
 
+  // Handle streaming if available
+  if (state) {
+    const globalStreamingConfig = (globalThis as any)._streamingConfig;
+    const effectiveStreaming = state.streaming || globalStreamingConfig;
+    
+    if (effectiveStreaming?.enabled && effectiveStreaming.onToken) {
+      console.log("[handleBooking] Streaming WhatsApp fallback response");
+      // Stream the response word by word
+      const words = responseContent.split(' ');
+      for (let i = 0; i < words.length; i++) {
+        const token = i === words.length - 1 ? words[i] : words[i] + ' ';
+        effectiveStreaming.onToken(token, effectiveStreaming.messageId);
+        // Add a small delay to simulate natural typing
+        await new Promise(resolve => setTimeout(resolve, 30));
+      }
+    }
+  }
+
   return {
-    messages: [new AIMessage({ content: responseContent })],
+    messages: state ? [...state.messages, {
+      role: "assistant",
+      content: responseContent
+    }] : [new AIMessage({ content: responseContent })],
   };
 } 

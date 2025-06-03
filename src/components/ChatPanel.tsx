@@ -85,6 +85,10 @@ const scrollbarStyles = `
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  images?: string[];  // New property for image URLs
+  id?: string;  // For streaming message identification
+  status?: 'pending' | 'streaming' | 'complete' | 'error';  // For streaming states
+  timestamp?: number;  // For message ordering
 };
 
 interface ChatPanelProps {
@@ -102,6 +106,11 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputFormRef = useRef<HTMLFormElement>(null);
   const [debugMode] = useState(import.meta.env.VITE_DEBUG_MODE === 'true');
+  
+  // Streaming state management
+  const [streamingEnabled] = useState(import.meta.env.VITE_STREAMING_ENABLED !== 'false'); // Default to true
+  const [currentStreamingMessageId, setCurrentStreamingMessageId] = useState<string | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     // Initialize with personalized greeting when the component mounts or leadInfo changes
@@ -186,6 +195,175 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
     }
   }, [leadInfo]);
 
+  // Cleanup EventSource on component unmount or dialog close
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen && eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+      setCurrentStreamingMessageId(null);
+    }
+  }, [isOpen]);
+
+  // Streaming utility function
+  const handleStreamingResponse = async (updatedMessages: ChatMessage[]): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create placeholder message for streaming
+      const streamingMessage: ChatMessage = {
+        role: "assistant",
+        content: "",
+        id: messageId,
+        status: 'streaming',
+        timestamp: Date.now(),
+      };
+      
+      setMessages(prev => [...prev, streamingMessage]);
+      setCurrentStreamingMessageId(messageId);
+
+      // Prepare request body
+      const requestBody = {
+        messages: updatedMessages.map(m => ({role: m.role, content: m.content})),
+        leadInfo,
+      };
+
+      // Create EventSource for streaming
+      const eventSource = new EventSource(
+        `/api/chat-stream?` + new URLSearchParams({
+          body: JSON.stringify(requestBody),
+          threadId: threadId,
+        })
+      );
+
+      // Alternative approach: Use POST with EventSource (if supported by server)
+      eventSource.close(); // Close the GET-based EventSource
+      
+      // Use fetch to POST data and then handle SSE manually
+      fetch('/api/chat-stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Thread-ID': threadId,
+          'Accept': 'text/event-stream',
+        },
+        body: JSON.stringify(requestBody),
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        if (!response.body) {
+          throw new Error('No response body for streaming');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        const processStream = () => {
+          reader.read().then(({ done, value }) => {
+            if (done) {
+              setCurrentStreamingMessageId(null);
+              setMessages(prev => prev.map(msg => 
+                msg.id === messageId 
+                  ? { ...msg, status: 'complete' as const }
+                  : msg
+              ));
+              resolve();
+              return;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  
+                  if (data.type === 'token') {
+                    setMessages(prev => prev.map(msg => 
+                      msg.id === messageId 
+                        ? { ...msg, content: msg.content + data.data }
+                        : msg
+                    ));
+                  } else if (data.type === 'images') {
+                    setMessages(prev => prev.map(msg => 
+                      msg.id === messageId 
+                        ? { ...msg, images: data.data.images }
+                        : msg
+                    ));
+                  } else if (data.type === 'error') {
+                    console.error('[ChatPanel] Streaming error:', data.data);
+                    setMessages(prev => prev.map(msg => 
+                      msg.id === messageId 
+                        ? { ...msg, status: 'error' as const, content: msg.content || 'Error occurred during streaming.' }
+                        : msg
+                    ));
+                    setCurrentStreamingMessageId(null);
+                    
+                    // Fallback to non-streaming if suggested
+                    if (data.data.fallbackToSync) {
+                      reject(new Error('FALLBACK_TO_SYNC'));
+                    } else {
+                      resolve();
+                    }
+                    return;
+                  } else if (data.type === 'complete') {
+                    setCurrentStreamingMessageId(null);
+                    setMessages(prev => prev.map(msg => 
+                      msg.id === messageId 
+                        ? { ...msg, status: 'complete' as const }
+                        : msg
+                    ));
+                    resolve();
+                    return;
+                  }
+                } catch (error) {
+                  console.error('[ChatPanel] Error parsing SSE data:', error);
+                }
+              }
+            }
+
+            processStream();
+          }).catch(error => {
+            console.error('[ChatPanel] Stream reading error:', error);
+            setCurrentStreamingMessageId(null);
+            setMessages(prev => prev.map(msg => 
+              msg.id === messageId 
+                ? { ...msg, status: 'error' as const, content: msg.content || 'Streaming error occurred.' }
+                : msg
+            ));
+            reject(error);
+          });
+        };
+
+        processStream();
+      })
+      .catch(error => {
+        console.error('[ChatPanel] Streaming fetch error:', error);
+        setCurrentStreamingMessageId(null);
+        setMessages(prev => prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, status: 'error' as const, content: 'Failed to start streaming.' }
+            : msg
+        ));
+        reject(error);
+      });
+    });
+  };
+
   const handleInputFocus = () => {
     // Only scroll into view if dialog is open to prevent conflicts during closing
     if (isOpen) {
@@ -208,7 +386,13 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
     if (!input.trim() || isLoading) return;
     
     const userInput = input.trim();
-    const userMessage = { role: "user" as const, content: userInput };
+    const userMessage: ChatMessage = { 
+      role: "user" as const, 
+      content: userInput,
+      id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      status: 'complete'
+    };
     
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
@@ -230,39 +414,38 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
         }
 
         await new Promise(resolve => setTimeout(resolve, 1000));
-        const botResponse = { role: "assistant" as const, content: mockReply };
+        const botResponse: ChatMessage = { 
+          role: "assistant" as const, 
+          content: mockReply,
+          id: `assistant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          timestamp: Date.now(),
+          status: 'complete'
+        };
         setMessages(prev => [...prev, botResponse]);
       } else {
-        console.log("[ChatPanel] Attempting fetch to /api/chat with body:", JSON.stringify({ 
-          messages: updatedMessages.map(m => ({role: m.role, content: m.content})),
-          leadInfo, // Include leadInfo in the request for personalization
-        }));
-        
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Thread-ID": threadId, // Include thread ID in headers for persistence
-          },
-          body: JSON.stringify({
-            messages: updatedMessages.map(m => ({role: m.role, content: m.content})),
-            leadInfo, // Include leadInfo for personalization
-          }),
-        });
-
-        if (!response.ok) {
-          let errorBody = 'No error details available';
-          try { errorBody = await response.text(); } catch {/*ignore*/}
-          throw new Error(`Failed to get response. Status: ${response.status}. Body: ${errorBody}`);
-        }
-
-        const data = await response.json();
-        const botResponse = { role: "assistant" as const, content: data.reply };
-        setMessages(prev => [...prev, botResponse]);
-        
-        // Log source documents if available for debugging
-        if (data.sourceDocuments && Array.isArray(data.sourceDocuments)) {
-          console.log("[ChatPanel] Retrieved source documents:", data.sourceDocuments.length);
+        // Try streaming first if enabled
+        if (streamingEnabled) {
+          console.log("[ChatPanel] Attempting streaming response...");
+          try {
+            await handleStreamingResponse(updatedMessages);
+            console.log("[ChatPanel] Streaming completed successfully");
+          } catch (error) {
+            console.log("[ChatPanel] Streaming failed, falling back to non-streaming:", error);
+            
+            // Remove the failed streaming message
+            setMessages(prev => prev.filter(msg => msg.id !== currentStreamingMessageId));
+            setCurrentStreamingMessageId(null);
+            
+            // Fall back to non-streaming mode only if it's a fallback error
+            if (error instanceof Error && error.message === 'FALLBACK_TO_SYNC') {
+              await handleNonStreamingResponse(updatedMessages);
+            } else {
+              throw error; // Re-throw other errors
+            }
+          }
+        } else {
+          // Use non-streaming mode
+          await handleNonStreamingResponse(updatedMessages);
         }
       }
     } catch (error) {
@@ -271,11 +454,53 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
         ...prev,
         { 
           role: "assistant", 
-          content: "I'm sorry, there was an error processing your request. Please try again later." 
+          content: "I'm sorry, there was an error processing your request. Please try again later.",
+          id: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          timestamp: Date.now(),
+          status: 'error'
         }
       ]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Non-streaming fallback function
+  const handleNonStreamingResponse = async (updatedMessages: ChatMessage[]) => {
+    console.log("[ChatPanel] Using non-streaming mode, fetching from /api/chat");
+    
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Thread-ID": threadId, // Include thread ID in headers for persistence
+      },
+      body: JSON.stringify({
+        messages: updatedMessages.map(m => ({role: m.role, content: m.content})),
+        leadInfo, // Include leadInfo for personalization
+      }),
+    });
+
+    if (!response.ok) {
+      let errorBody = 'No error details available';
+      try { errorBody = await response.text(); } catch {/*ignore*/}
+      throw new Error(`Failed to get response. Status: ${response.status}. Body: ${errorBody}`);
+    }
+
+    const data = await response.json();
+    const botResponse: ChatMessage = { 
+      role: "assistant" as const, 
+      content: data.reply,
+      images: data.images || undefined,  // Include images if present
+      id: `assistant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      status: 'complete'
+    };
+    setMessages(prev => [...prev, botResponse]);
+    
+    // Log source documents if available for debugging
+    if (data.sourceDocuments && Array.isArray(data.sourceDocuments)) {
+      console.log("[ChatPanel] Retrieved source documents:", data.sourceDocuments.length);
     }
   };
 
@@ -386,6 +611,48 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {message.content}
                       </ReactMarkdown>
+                      
+                      {/* Streaming indicator */}
+                      {message.status === 'streaming' && (
+                        <div className="flex items-center gap-1 mt-2">
+                          <div className="flex space-x-1">
+                            <div className="w-1 h-1 bg-gray-400 rounded-full typing-dot"></div>
+                            <div className="w-1 h-1 bg-gray-400 rounded-full typing-dot"></div>
+                            <div className="w-1 h-1 bg-gray-400 rounded-full typing-dot"></div>
+                          </div>
+                          <span className="text-xs text-gray-500 ml-2">Thinking...</span>
+                        </div>
+                      )}
+                      
+                      {/* Streaming cursor for active streaming message */}
+                      {message.status === 'streaming' && message.content && (
+                        <span className="inline-block w-2 h-4 bg-gray-500 ml-1 animate-pulse"></span>
+                      )}
+                      
+                      {/* Image rendering */}
+                      {message.images && message.images.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {message.images.map((imageUrl, idx) => (
+                            <div key={idx} className="rounded-lg overflow-hidden shadow-md">
+                              <img 
+                                src={imageUrl} 
+                                alt={`Property image ${idx + 1}`}
+                                className="w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => {
+                                  // Open image in new tab for better viewing
+                                  window.open(imageUrl, '_blank');
+                                }}
+                                onError={(e) => {
+                                  console.error('Failed to load image:', imageUrl);
+                                  const target = e.currentTarget as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                                loading="lazy"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -401,8 +668,8 @@ export function ChatPanel({ leadInfo, isOpen, onOpenChange, onReset }: ChatPanel
               </div>
             ))}
             
-            {/* Enhanced Typing Indicator */}
-            {isLoading && (
+            {/* Enhanced Typing Indicator - Only show when not streaming */}
+            {isLoading && !currentStreamingMessageId && (
               <div className="flex items-start gap-3 message-animation">
                 {/* Avatar */}
                 <div className="flex-shrink-0 mt-1">

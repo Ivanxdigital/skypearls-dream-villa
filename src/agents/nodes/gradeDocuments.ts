@@ -100,6 +100,17 @@ function detectBookingIntent(message: string): boolean {
   return hasBookingPattern || hasViewingRequest || hasDirectBooking;
 }
 
+// Location intent detection 
+function detectLocationIntent(message: string): boolean {
+  const locationPatterns = [
+    /\b(where\s+(is|are)|location|address|directions|map)\b/i,
+    /\b(how\s+to\s+(get|find)|navigate\s+to)\b/i,
+    /\b(show\s+me\s+(where|location)|find\s+property)\b/i,
+    /\b(google\s+maps|coordinates|gps)\b/i,
+  ];
+  return locationPatterns.some(pattern => pattern.test(message));
+}
+
 export async function gradeDocuments(state: ChatState) {
   const { question, documents, leadInfo } = state;
   
@@ -117,6 +128,19 @@ export async function gradeDocuments(state: ChatState) {
   if (isBookingIntent) {
     console.log("[gradeDocuments] Booking intent detected for question:", question);
     return { documentQuality: -2, isGreeting: false, isBookingIntent: true }; // Special value for booking
+  }
+  
+  // Check for location intent
+  const isLocationIntent = detectLocationIntent(question);
+  if (isLocationIntent) {
+    console.log("[gradeDocuments] Location intent detected for question:", question);
+    return { 
+      documentQuality: -3, 
+      isGreeting: false, 
+      isBookingIntent: false, 
+      showImages: true,
+      imageType: 'location' as const
+    };
   }
   
   if (!documents || documents.length === 0) {

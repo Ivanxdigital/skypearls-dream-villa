@@ -30,11 +30,12 @@ function getRandomResponse(responses: string[]): string {
 }
 
 export async function handleGreeting(state: ChatState) {
-  const { question, leadInfo } = state;
+  const { question, leadInfo, streaming } = state;
   const userName = leadInfo?.firstName;
   let responseContent = "";
 
   console.log("[handleGreeting] Handling greeting for question:", question);
+  console.log("[handleGreeting] Streaming enabled:", streaming?.enabled);
 
   const lowerQuestion = question.toLowerCase();
 
@@ -62,7 +63,26 @@ export async function handleGreeting(state: ChatState) {
 
   console.log("[handleGreeting] Generated greeting response:", responseContent);
 
+  // Check if streaming is enabled and handle accordingly
+  const globalStreamingConfig = (globalThis as any)._streamingConfig;
+  const effectiveStreaming = streaming || globalStreamingConfig;
+  
+  if (effectiveStreaming?.enabled && effectiveStreaming.onToken) {
+    console.log("[handleGreeting] Streaming greeting response");
+    // Stream the response word by word
+    const words = responseContent.split(' ');
+    for (let i = 0; i < words.length; i++) {
+      const token = i === words.length - 1 ? words[i] : words[i] + ' ';
+      effectiveStreaming.onToken(token, effectiveStreaming.messageId);
+      // Add a small delay to simulate natural typing
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+  }
+
   return {
-    messages: [new AIMessage({ content: responseContent })],
+    messages: [...state.messages, {
+      role: "assistant",
+      content: responseContent
+    }]
   };
 }

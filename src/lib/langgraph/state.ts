@@ -15,6 +15,13 @@ export interface LeadInfo {
   sendTranscript?: boolean;
 }
 
+// Streaming configuration interface
+export interface StreamingConfig {
+  enabled: boolean;
+  onToken?: (token: string, messageId?: string) => void;
+  messageId?: string;
+}
+
 // Types for the different states our graph will manage
 export interface ChatState {
   messages: Message[];
@@ -26,6 +33,15 @@ export interface ChatState {
   isBookingIntent?: boolean; // Added for booking intent detection
   bookingInfo?: { eventTypeUrl?: string; eventTypeName?: string }; // Added for booking information
   leadInfo?: LeadInfo;
+  // Image functionality properties
+  imageUrls?: string[];
+  imageContext?: string;
+  imageType?: 'location' | 'property' | 'amenity';
+  showImages?: boolean;
+  // Streaming properties
+  streaming?: StreamingConfig;
+  streamBuffer?: string;
+  currentMessageId?: string;
 }
 
 // State definitions for specific graph nodes using Annotation.Root
@@ -63,6 +79,36 @@ export const StateAnnotation = Annotation.Root({
     default: () => undefined,
   }),
   leadInfo: Annotation<LeadInfo | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  // Image functionality annotations
+  imageUrls: Annotation<string[] | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  imageContext: Annotation<string | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  imageType: Annotation<'location' | 'property' | 'amenity' | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  showImages: Annotation<boolean | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  // Streaming annotations
+  streaming: Annotation<StreamingConfig | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  streamBuffer: Annotation<string | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  currentMessageId: Annotation<string | undefined>({
     value: (_, y) => y,
     default: () => undefined,
   }),
