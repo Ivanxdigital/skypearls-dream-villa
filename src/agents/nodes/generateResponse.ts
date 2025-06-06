@@ -1,6 +1,7 @@
 import { ChatState, StreamingConfig } from "../../lib/langgraph/state.js";
 import { ChatOpenAI } from "@langchain/openai";
 import { getVillaConsultationEventType } from "../../lib/calendly-client.js";
+import { shouldTriggerQualification } from "../../lib/lead-scoring.js";
 
 function extractStringContent(content: unknown): string {
   if (typeof content === "string") return content;
@@ -70,7 +71,7 @@ async function getBookingSuggestion(leadInfo: { firstName?: string } | undefined
 }
 
 export async function generateResponse(state: ChatState) {
-  const { question, documents, leadInfo, messages, streaming } = state;
+  const { question, documents, leadInfo, messages, streaming, qualificationData, questionsAsked } = state;
   
   console.log("[generateResponse] Generating response for question:", question);
   console.log("[generateResponse] Streaming enabled:", streaming?.enabled);
@@ -114,16 +115,11 @@ We have beautiful luxury villas in Siargao for both personal use and investment.
       }
     }
 
-    return {
-      messages: [...state.messages, {
-        role: "assistant",
-        content: fallbackMessage
-      }]
-    };
+    return addQualificationCheck(state, fallbackMessage);
   }
   
   // Get streaming config from global context if not in state
-  const globalStreamingConfig = (globalThis as any)._streamingConfig as StreamingConfig | undefined;
+  const globalStreamingConfig = (globalThis as { _streamingConfig?: StreamingConfig })._streamingConfig;
   const effectiveStreaming = streaming || globalStreamingConfig;
   
   // Initialize LLM for response generation with streaming support
@@ -265,12 +261,7 @@ Keep it friendly, informative, and concise.`;
     console.log("[generateResponse] Generated response:", answer.slice(0, 100) + "...");
     
     // Return the response as a new message to add to the conversation
-    return {
-      messages: [...state.messages, {
-        role: "assistant",
-        content: answer
-      }]
-    };
+    return addQualificationCheck(state, answer);
   } catch (error) {
     console.error("[generateResponse] Error generating response:", error);
     
@@ -303,11 +294,29 @@ Could you try your question again? Or feel free to share your contact info and I
       }
     }
 
-    return {
-      messages: [...state.messages, {
-        role: "assistant",
-        content: errorFallback
-      }]
-    };
+    return addQualificationCheck(state, errorFallback);
   }
+}
+
+// Helper function to add qualification logic to response returns
+function addQualificationCheck(state: ChatState, responseContent: string) {
+  const { qualificationData, questionsAsked, messages } = state;
+  
+  // Check if qualification should be triggered for the next turn
+  const conversationTurn = messages.filter(m => m.role === 'user').length;
+  const shouldQualify = shouldTriggerQualification(
+    qualificationData, 
+    questionsAsked || [], 
+    conversationTurn
+  );
+  
+  console.log("[generateResponse] Should qualify next turn:", shouldQualify);
+  
+  return {
+    messages: [...state.messages, {
+      role: "assistant",
+      content: responseContent
+    }],
+    shouldQualify
+  };
 }

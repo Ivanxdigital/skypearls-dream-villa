@@ -10,7 +10,7 @@ export const useSmoothScroll = (offset: number = 80) => {
       const target = e.target as HTMLElement;
       
       // Check if the clicked element is an anchor or a child of an anchor
-      let anchor = target.closest('a') as HTMLAnchorElement;
+      const anchor = target.closest('a') as HTMLAnchorElement;
       
       if (anchor && anchor.hash && anchor.hash.startsWith('#')) {
         e.preventDefault();

@@ -214,6 +214,14 @@ export default async function handler(req: any, res: any) {
       },
       streamBuffer: undefined,
       currentMessageId: undefined,
+      // Lead qualification properties
+      qualificationData: undefined,
+      leadScore: undefined,
+      questionsAsked: [],
+      qualificationComplete: false,
+      nextQualificationOpportunity: undefined,
+      qualificationProgress: 0,
+      shouldQualify: undefined,
     };
 
     // Run the graph with streaming enabled
