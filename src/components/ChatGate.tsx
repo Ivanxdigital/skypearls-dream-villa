@@ -19,6 +19,8 @@ export function ChatGate({ children }: ChatGateProps) {
   const [leadInfo, setLeadInfo] = useState<LeadInfo | null>(null);
   const [showLeadForm, setShowLeadForm] = useState<boolean>(false);
   const [chatOpen, setChatOpen] = useState<boolean>(false);
+  const [showTooltip, setShowTooltip] = useState<boolean>(false);
+  const [hasAutoShown, setHasAutoShown] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -37,6 +39,25 @@ export function ChatGate({ children }: ChatGateProps) {
       localStorage.removeItem(LOCAL_STORAGE_KEY);
     }
   }, []);
+
+  // Auto-show tooltip effect
+  useEffect(() => {
+    if (!hasAutoShown) {
+      const timer = setTimeout(() => {
+        setShowTooltip(true);
+        setHasAutoShown(true);
+        
+        // Hide after 8 seconds
+        const hideTimer = setTimeout(() => {
+          setShowTooltip(false);
+        }, 8000);
+        
+        return () => clearTimeout(hideTimer);
+      }, 500); // Small delay to ensure component is mounted
+      
+      return () => clearTimeout(timer);
+    }
+  }, [hasAutoShown]);
 
   const handleToggleFab = () => {
     if (leadInfo) {
@@ -77,12 +98,32 @@ export function ChatGate({ children }: ChatGateProps) {
     setChatOpen(false);
   };
 
+  const handleMouseEnter = () => {
+    if (hasAutoShown) {
+      setShowTooltip(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (hasAutoShown) {
+      setShowTooltip(false);
+    }
+  };
+
   return (
     <>
       {/* Luxury FAB Container with Tooltip */}
-      <div className="fixed bottom-4 right-4 md:bottom-6 md:right-10 z-50 group">
-        {/* Tooltip - Hidden on mobile to avoid touch issues */}
-        <div className="absolute bottom-full right-0 mb-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out pointer-events-none whitespace-nowrap shadow-lg hidden md:block transform translate-y-1 group-hover:translate-y-0">
+      <div 
+        className="fixed bottom-4 right-4 md:bottom-6 md:right-10 z-50"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* Tooltip - Now shows on both desktop and mobile */}
+        <div className={`absolute bottom-full right-0 mb-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg transition-all duration-300 ease-out pointer-events-none whitespace-nowrap shadow-lg transform ${
+          showTooltip 
+            ? 'opacity-100 translate-y-0' 
+            : 'opacity-0 translate-y-1'
+        }`}>
           Chat with Skye
           {/* Tooltip Arrow */}
           <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
