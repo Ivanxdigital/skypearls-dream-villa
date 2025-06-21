@@ -7,9 +7,12 @@ import AmenitiesSection from '@/components/AmenitiesSection';
 import LocationSection from '@/components/LocationSection';
 import GallerySection from '@/components/GallerySection';
 import InvestmentSection from '@/components/InvestmentSection';
+import FAQSection from '@/components/FAQSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import { useSmoothScroll } from '@/hooks/use-smooth-scroll';
+import { SEOHead } from '@/components/SEOHead';
+import { StructuredData } from '@/components/StructuredData';
 
 const Index = () => {
   // Initialize smooth scrolling with 80px offset for fixed navbar
@@ -17,6 +20,8 @@ const Index = () => {
   
   return (
     <div className="min-h-screen bg-skypearl-white overflow-x-hidden">
+      <SEOHead />
+      <StructuredData />
       <Navbar />
       <Hero />
       <AboutSection />
@@ -25,6 +30,7 @@ const Index = () => {
       <LocationSection />
       <GallerySection />
       <InvestmentSection />
+      <FAQSection />
       <ContactSection />
       <Footer />
     </div>

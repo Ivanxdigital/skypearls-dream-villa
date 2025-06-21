@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+
+  <!-- Homepage -->
+  <url>
+    <loc>https://skypearls-dream-villa.com/</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://skypearls-dream-villa.com/images/villas/villa-anna-rendering-front.png</image:loc>
+      <image:title>Pre-selling luxury villa in Siargao</image:title>
+      <image:caption>Villa Anna - Modern luxury villa with smart home technology in Siargao</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Villa Pages -->
+  <url>
+    <loc>https://skypearls-dream-villa.com/villa-anna</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://skypearls-dream-villa.com/images/villas/villa-anna-rendering-front.png</image:loc>
+      <image:title>Villa Anna - Luxury smart villa with infinity pool</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://skypearls-dream-villa.com/villa-perles</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://skypearls-dream-villa.com/images/villas/villa-perls-front.png</image:loc>
+      <image:title>Villa Perles - Double-curved modern villa in Siargao</image:title>
+    </image:image>
+  </url>
+
+  <!-- Key Sections -->
+  <url>
+    <loc>https://skypearls-dream-villa.com/#about</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://skypearls-dream-villa.com/#features</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://skypearls-dream-villa.com/#amenities</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://skypearls-dream-villa.com/#location</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://skypearls-dream-villa.com/#gallery</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://skypearls-dream-villa.com/#investment</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://skypearls-dream-villa.com/#contact</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Keyword-targeted Landing Pages (if created) -->
+  <url>
+    <loc>https://skypearls-dream-villa.com/pre-selling-villas-siargao</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://skypearls-dream-villa.com/luxury-villas-siargao</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://skypearls-dream-villa.com/siargao-real-estate-investment</loc>
+    <lastmod>2025-01-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>

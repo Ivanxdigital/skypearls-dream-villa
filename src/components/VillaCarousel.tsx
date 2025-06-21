@@ -65,7 +65,7 @@ const VillaCarousel: React.FC<VillaCarouselProps> = ({ images, className }) => {
             <div className="w-full h-full flex items-center justify-center rounded-lg overflow-hidden bg-skypearl-dark/5">
               <img 
                 src={image.url} 
-                alt={image.title} 
+                alt={`${image.title} - Luxury villa interior in Siargao featuring ${image.description.toLowerCase()}`}
                 className="w-full h-full object-cover"
                 loading="lazy"
               />

@@ -53,7 +53,7 @@ const AboutSection = () => {
           <div ref={imageReveal.ref} className="relative h-full min-h-[400px] opacity-0">
             <img 
               src="/Villa Rendering.png" 
-              alt="3D architectural rendering of our modern smart home villa pre-selling in Siargao" 
+              alt="3D architectural rendering of modern luxury smart villa with infinity pool, pre-selling in Siargao Philippines" 
               className="w-full h-full object-cover rounded-lg shadow-lg"
             />
             <div className="absolute -bottom-6 -right-6 bg-skypearl p-6 rounded-lg shadow-lg">

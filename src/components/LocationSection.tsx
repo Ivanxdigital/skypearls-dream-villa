@@ -6,12 +6,14 @@ const LocationSection = () => {
   return (
     <section id="location" className="section-padding bg-skypearl-dark text-white">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-2xl mx-auto mb-16 animate-fade-in">
-          <span className="text-sm font-medium text-skypearl uppercase tracking-wider">Prime Location</span>
-          <h2 className="section-title text-white">Siargao, Philippines</h2>
-          <p className="text-xl text-white/80 mb-10 font-light">
-            Located in the heart of the surfing capital of the Philippines, Skypearls Villas
-            offers the perfect blend of convenience and natural beauty.
+        <div className="text-center max-w-3xl mx-auto mb-16 animate-fade-in">
+          <span className="text-sm font-medium text-skypearl uppercase tracking-wider">Perfectly Positioned</span>
+          <h2 className="section-title text-white">Life in Paradise</h2>
+          <p className="text-xl text-white/80 mb-10 font-light leading-relaxed">
+            Nestled in the serene Del Carmen area of Siargao, our luxury villas offer the perfect escape 
+            from the ordinary. Just one minute from Sayak Airport and thirty minutes from the world-famous 
+            Cloud 9 surf break, you'll enjoy the best of both worlds - tranquil island living with easy 
+            access to Siargao's most coveted destinations.
           </p>
         </div>
 
@@ -35,7 +37,7 @@ const LocationSection = () => {
 
           {/* New Location List on the right */}
           <div className="lg:col-span-2 animate-fade-in">
-            <h3 className="text-2xl font-playfair mb-6">Explore Nearby</h3>
+            <h3 className="text-2xl font-playfair mb-6">Your Siargao Adventures Await</h3>
 
             {/* Responsive grid for locations */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

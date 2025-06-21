@@ -58,7 +58,7 @@ const Hero = () => {
       >
         <img
           src="/hero-section-villa.jpg"
-          alt="Luxury villa in Siargao"
+          alt="Pre-selling luxury smart villa with infinity pool in Siargao island paradise"
           className="w-full h-full object-cover object-center"
         />
       </motion.div>
@@ -86,17 +86,17 @@ const Hero = () => {
               variants={itemVariants}
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-playfair font-bold text-white mb-4 sm:mb-6 lg:mb-8 leading-tight tracking-wide drop-shadow-lg"
             >
-              Luxury Smart Villas
+              Your Dream Villa Awaits
               <br />
-              <span className="text-skypearl">in Paradise</span>
+              <span className="text-skypearl">in Siargao</span>
             </motion.h1>
             
             <motion.p
               variants={itemVariants}
               className="text-lg sm:text-xl xl:text-2xl text-white/90 mb-8 sm:mb-10 lg:mb-12 font-light leading-relaxed drop-shadow-md max-w-2xl lg:max-w-3xl"
             >
-              Experience modern luxury living in Siargao's most exclusive 
-              smart villa development. Where tropical beauty meets cutting-edge technology.
+              Discover exclusive pre-selling luxury villas in the heart of Siargao's paradise. 
+              Modern smart homes with infinity pools, just 30 minutes from world-famous Cloud 9.
             </motion.p>
           
             <motion.div

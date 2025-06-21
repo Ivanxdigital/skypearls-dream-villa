@@ -34,7 +34,7 @@ export const BrandLogo: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ clas
       <img
         ref={logoRef}
         src="/skypearls-logo-stamp.png"
-        alt="SkyPearls Logo Stamp"
+        alt="SkyPearls Dream Villa logo - Luxury villa development in Siargao Philippines"
         className={cn(
           'h-12 w-auto object-contain',
           'opacity-0 animate-skypearl-logo-fade-in'
