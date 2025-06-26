@@ -12,8 +12,8 @@ interface SEOHeadProps {
 
 export const SEOHead = ({
   title = "Pre-Selling Luxury Villas in Siargao | Skypearls Dream Villa",
-  description = "Discover exclusive pre-selling luxury villas in Siargao, Philippines. Modern smart homes near Cloud 9 with infinity pools, smart automation, and investment potential. Starting ₱17M.",
-  keywords = "luxury villas Siargao, pre-selling villas Siargao, Siargao real estate investment, smart villas Philippines, Cloud 9 properties",
+  description = "Discover exclusive property for sale in Siargao, Philippines. Villa Anna and luxury smart homes near Cloud 9 with infinity pools, smart automation, and investment potential. Starting ₱15M.",
+  keywords = "property for sale in Siargao, luxury villas Siargao, pre-selling villas Siargao, Siargao real estate investment, smart villas Philippines, Cloud 9 properties, houses for sale Siargao",
   image = "/images/villas/villa-anna-rendering-front.png",
   url = "https://skypearls-dream-villa.com",
   type = "website",

@@ -103,7 +103,20 @@ const PricingSection: React.FC<{ villa: Villa }> = ({ villa }) => (
       <h3 className="text-xl md:text-2xl font-playfair text-skypearl-dark leading-tight">
         {villa.name}
       </h3>
-      <StatusBadge status={villa.status} />
+      <div className="flex gap-2">
+        <StatusBadge status={villa.status} />
+        {villa.id === 'villa-anna' && (
+          <div 
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-green-100 text-green-800 border-green-200 hover:bg-green-200 hover:shadow-sm transition-all duration-300 ease-in-out transform hover:scale-105 cursor-default select-none"
+            role="status"
+            aria-label="Villa available for sale"
+            tabIndex={0}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>For Sale</span>
+          </div>
+        )}
+      </div>
     </div>
     
     {/* Pricing Information */}
@@ -269,8 +282,8 @@ const VillaDetailsCard: React.FC<VillaDetailsCardProps> = ({ villa, className })
         </ul>
       </div>
       
-      {/* Enhanced CTA Button */}
-      <div className="mt-6 pt-4 border-t border-skypearl-dark/5">
+      {/* Enhanced CTA Buttons */}
+      <div className="mt-6 pt-4 border-t border-skypearl-dark/5 space-y-3">
         <button 
           onClick={handleRequestInfo}
           className={cn(

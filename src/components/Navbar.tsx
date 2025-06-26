@@ -122,6 +122,7 @@ const Navbar = () => {
             <NavLink href="#features" scrolled={scrolled}>Smart Features</NavLink>
             <NavLink href="#amenities" scrolled={scrolled}>Amenities</NavLink>
             <NavLink href="#gallery" scrolled={scrolled}>Gallery</NavLink>
+            <NavLink href="/property-for-sale-siargao" scrolled={scrolled}>Property for Sale</NavLink>
             <NavLink href="#investment" scrolled={scrolled}>Investment</NavLink>
             <a 
               href="#contact" 
@@ -252,6 +253,17 @@ const Navbar = () => {
                   variants={menuItemVariants}
                   initial="hidden"
                   animate="visible"
+                  href="/property-for-sale-siargao" 
+                  className="text-nav-text-dark hover:text-skypearl transition-colors text-lg font-medium"
+                  onClick={closeMobileMenu}
+                >
+                  Property for Sale
+                </motion.a>
+                <motion.a 
+                  custom={5}
+                  variants={menuItemVariants}
+                  initial="hidden"
+                  animate="visible"
                   href="#investment" 
                   className="text-nav-text-dark hover:text-skypearl transition-colors text-lg font-medium"
                   onClick={closeMobileMenu}
@@ -259,7 +271,7 @@ const Navbar = () => {
                   Investment
                 </motion.a>
                 <motion.a 
-                  custom={5}
+                  custom={6}
                   variants={menuItemVariants}
                   initial="hidden"
                   animate="visible"
@@ -275,7 +287,7 @@ const Navbar = () => {
               {/* Contact Info and Social Links */}
               <div className="mt-auto p-6 space-y-5 border-t border-skypearl/20">
                 <motion.div 
-                  custom={6}
+                  custom={7}
                   variants={menuItemVariants}
                   initial="hidden"
                   animate="visible"
@@ -292,7 +304,7 @@ const Navbar = () => {
                   </div>
                 </motion.div>
                 <motion.div 
-                  custom={7}
+                  custom={8}
                   variants={menuItemVariants}
                   initial="hidden"
                   animate="visible"

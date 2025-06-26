@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import PropertyForSaleSiargao from "./pages/PropertyForSaleSiargao";
 import NotFound from "./pages/NotFound";
 // import { ChatPanel } from "./components/ChatPanel"; // ChatPanel is now rendered by ChatGate
 import { ChatGate } from "./components/ChatGate";
@@ -37,6 +38,7 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/property-for-sale-siargao" element={<PropertyForSaleSiargao />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
