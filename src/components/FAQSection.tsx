@@ -22,7 +22,7 @@ const faqData: FAQItem[] = [
   },
   {
     question: "What's included in the pre-selling package?",
-    answer: "Each villa comes with premium SMEG appliances, smart home automation systems, solar power infrastructure, and an infinity pool. You can choose between furnished (₱18M-₱35M) or unfurnished (₱17M-₱32M) options. All properties include dedicated parking and 24/7 security."
+    answer: "Each villa comes with premium SMEG appliances, smart home automation systems, solar power infrastructure, and an infinity pool. Villa Anna starts at ₱15M and Villa Perles is priced at ₱28M-₱35M. All properties include dedicated parking and 24/7 security."
   },
   {
     question: "Can foreigners buy these villas in the Philippines?",
@@ -34,7 +34,7 @@ const faqData: FAQItem[] = [
   },
   {
     question: "When will the villas be ready for occupancy?",
-    answer: "Villa Anna is under construction with expected completion in July 2025. Villa Perles is available for immediate development. We provide regular construction updates and maintain strict quality standards throughout the building process."
+    answer: "Villa Anna is under construction with expected completion in August 2025. Villa Perles is available for immediate development. We provide regular construction updates and maintain strict quality standards throughout the building process."
   },
   {
     question: "What financing options are available?",

@@ -91,6 +91,19 @@
     <priority>0.8</priority>
   </url>
 
+  <!-- Property for Sale Page -->
+  <url>
+    <loc>https://skypearls-dream-villa.com/property-for-sale-siargao</loc>
+    <lastmod>2025-06-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://skypearls-dream-villa.com/images/villas/villa-anna-rendering-front.png</image:loc>
+      <image:title>Villa Anna - Luxury property for sale in Siargao</image:title>
+      <image:caption>Premium smart villa for sale in Siargao featuring infinity pool and modern amenities</image:caption>
+    </image:image>
+  </url>
+
   <!-- Keyword-targeted Landing Pages (if created) -->
   <url>
     <loc>https://skypearls-dream-villa.com/pre-selling-villas-siargao</loc>
