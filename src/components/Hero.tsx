@@ -70,8 +70,8 @@ const Hero = () => {
       <div className="absolute top-0 inset-x-0 h-32 sm:h-40 bg-gradient-to-b from-black/50 to-transparent z-10 pointer-events-none" />
       
       {/* Responsive luxury content container */}
-      <div className="relative z-10 flex h-full items-center justify-center lg:justify-start px-4 sm:px-6 lg:px-12 xl:px-16">
-        <div className="w-full max-w-lg sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl lg:w-2/3">
+      <div className="relative z-10 flex h-full items-center justify-center px-4 sm:px-6 lg:px-12 xl:px-16">
+        <div className="w-full max-w-lg sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl">
           {/* Enhanced glass morphism backdrop for luxury feel */}
           <div className="hidden sm:block lg:hidden absolute inset-0 -mx-8 -my-12 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10" />
           <div className="hidden lg:block absolute inset-0 -mx-12 -my-16 bg-white/8 backdrop-blur-md rounded-3xl border border-white/15" />
@@ -80,7 +80,7 @@ const Hero = () => {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="relative z-10 text-center lg:text-left"
+            className="relative z-10 text-center"
           >
             <motion.h1
               variants={itemVariants}
@@ -93,7 +93,7 @@ const Hero = () => {
             
             <motion.p
               variants={itemVariants}
-              className="text-lg sm:text-xl xl:text-2xl text-white/90 mb-8 sm:mb-10 lg:mb-12 font-light leading-relaxed drop-shadow-md max-w-2xl lg:max-w-3xl"
+              className="text-lg sm:text-xl xl:text-2xl text-white/90 mb-8 sm:mb-10 lg:mb-12 font-light leading-relaxed drop-shadow-md max-w-2xl lg:max-w-3xl mx-auto"
             >
               Discover exclusive pre-selling luxury villas in the heart of Siargao's paradise. 
               Modern smart homes with infinity pools, just 30 minutes from world-famous Cloud 9.
@@ -101,7 +101,7 @@ const Hero = () => {
           
             <motion.div
               variants={itemVariants}
-              className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+              className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center"
             >
               <motion.a 
                 href="#contact" 
