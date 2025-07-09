@@ -4,6 +4,7 @@ import Hero from '@/components/Hero';
 import AboutSection from '@/components/AboutSection';
 import FeaturesSection from '@/components/FeaturesSection';
 import AmenitiesSection from '@/components/AmenitiesSection';
+import CommercialAreaSection from '@/components/CommercialAreaSection';
 import LocationSection from '@/components/LocationSection';
 import GallerySection from '@/components/GallerySection';
 import InvestmentSection from '@/components/InvestmentSection';
@@ -27,6 +28,7 @@ const Index = () => {
       <AboutSection />
       <FeaturesSection />
       <AmenitiesSection />
+      <CommercialAreaSection />
       <LocationSection />
       <GallerySection />
       <InvestmentSection />
